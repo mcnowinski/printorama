@@ -78,7 +78,7 @@ export default function Status() {
               <Card className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
                 <CardContent className="flex items-center justify-between py-4">
                   <div>
-                    <p className="font-medium">{job.title}</p>
+                    <p className="font-medium">{job.student_name}</p>
                     <p className="text-sm text-neutral-500">
                       {new Date(job.created_at).toLocaleDateString()}
                     </p>

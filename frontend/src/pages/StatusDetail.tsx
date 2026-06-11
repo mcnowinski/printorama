@@ -51,7 +51,7 @@ export default function StatusDetail() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>{job.title}</CardTitle>
+            <CardTitle>Job Details</CardTitle>
             <p className="text-sm text-neutral-500">Submitted by {job.student_name}</p>
           </div>
           <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
@@ -78,6 +78,14 @@ export default function StatusDetail() {
               <div>
                 <p className="text-sm font-medium text-neutral-500">Assigned Printer</p>
                 <p>{job.printers?.name || 'Not yet assigned'}</p>
+              </div>
+            )}
+            {job.file_url && (
+              <div className="col-span-2">
+                <p className="text-sm font-medium text-neutral-500">File</p>
+                <a href={job.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+                  Download {job.file_url.split('/').pop()?.split('.').pop()?.toUpperCase() || 'file'}
+                </a>
               </div>
             )}
           </div>

@@ -41,8 +41,7 @@ export default function ManageJobs() {
 
   const filtered = jobs.filter((job) => {
     if (filter !== 'ALL' && job.status !== filter) return false
-    if (search && !job.title.toLowerCase().includes(search.toLowerCase()) &&
-        !job.student_name.toLowerCase().includes(search.toLowerCase()) &&
+    if (search && !job.student_name.toLowerCase().includes(search.toLowerCase()) &&
         !job.student_email.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -97,7 +96,7 @@ export default function ManageJobs() {
             ) : (
               filtered.map((job) => (
                 <TableRow key={job.id} className="cursor-pointer" onClick={() => window.location.href = `/manage/jobs/${job.id}`}>
-                  <TableCell className="font-medium">{job.title}</TableCell>
+                  <TableCell className="font-medium">{job.student_name}</TableCell>
                   <TableCell>
                     <div>
                       <p>{job.student_name}</p>

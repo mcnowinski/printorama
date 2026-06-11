@@ -67,7 +67,7 @@ export default function ManageJobDetail() {
         job_id: id,
         recipient: job.student_email,
         type: 'STATUS_CHANGE',
-        message: `Your job "${job.title}" status changed from ${oldStatus} to ${status}.`,
+        message: `Print job from ${job.student_name} status changed from ${oldStatus} to ${status}.`,
       })
     }
 
@@ -92,7 +92,7 @@ export default function ManageJobDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
-            <CardTitle>{job.title}</CardTitle>
+            <CardTitle>Job Details</CardTitle>
             <p className="text-sm text-neutral-500">
               {job.student_name} &lt;{job.student_email}&gt;
             </p>
@@ -115,6 +115,14 @@ export default function ManageJobDetail() {
               <div>
                 <span className="font-medium text-neutral-500">Filament:</span>{' '}
                 {job.filament_type}{job.filament_color ? ` (${job.filament_color})` : ''}
+              </div>
+            )}
+            {job.file_url && (
+              <div className="col-span-2">
+                <span className="font-medium text-neutral-500">File:</span>{' '}
+                <a href={job.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+                  Download {job.file_url.split('/').pop()?.split('.').pop()?.toUpperCase() || 'file'}
+                </a>
               </div>
             )}
             {job.student_notes && (

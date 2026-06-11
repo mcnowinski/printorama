@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -9,7 +9,9 @@ import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { Card, CardContent } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Search, Settings, Users, Plus, Loader2 } from 'lucide-react'
+import { Search, Settings, Users, Plus, Loader2, Upload, File, X } from 'lucide-react'
+
+const MAX_FILE_SIZE_MB = 50
 
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
@@ -30,14 +32,21 @@ export default function Dashboard() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [adding, setAdding] = useState(false)
   const [statusOptions, setStatusOptions] = useState<{ label: string }[]>([])
+  const [acceptedExtensions, setAcceptedExtensions] = useState<string[]>([])
+  const [addFile, setAddFile] = useState<File | null>(null)
+  const [addFileError, setAddFileError] = useState<string | null>(null)
+  const addFileInputRef = useRef<HTMLInputElement>(null)
   const [addForm, setAddForm] = useState({
-    title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
+    studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
   })
 
   useEffect(() => {
     loadJobs()
     supabase.from('dropdown_options').select('label').eq('category', 'JOB_STATUS').order('sort_order').then(({ data }) => {
       setStatusOptions(data || [])
+    })
+    supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
+      setAcceptedExtensions((data || []).map((d: any) => d.label))
     })
   }, [])
 
@@ -51,25 +60,41 @@ export default function Dashboard() {
   }
 
   async function handleAddJob() {
-    if (!addForm.title.trim() || !addForm.studentName.trim() || !addForm.studentEmail.trim()) return
+    if (!addForm.studentName.trim() || !addForm.studentEmail.trim()) return
     setAdding(true)
+
+    let fileUrl: string | null = null
+    if (addFile) {
+      const fileExt = addFile.name.split('.').pop()
+      const filePath = `${crypto.randomUUID()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('job-files').upload(filePath, addFile)
+      if (uploadError) {
+        console.error(uploadError)
+        setAdding(false)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('job-files').getPublicUrl(filePath)
+      fileUrl = urlData.publicUrl
+    }
+
     await supabase.from('jobs').insert({
-      title: addForm.title.trim(),
       student_name: addForm.studentName.trim(),
       student_email: addForm.studentEmail.trim(),
       student_notes: addForm.studentNotes.trim() || null,
       status: addForm.status,
+      file_url: fileUrl,
     })
     setAdding(false)
     setShowAddForm(false)
-    setAddForm({ title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
+    setAddFile(null)
+    setAddFileError(null)
+    setAddForm({ studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
     loadJobs()
   }
 
   const filtered = jobs.filter((job) => {
     if (filter !== 'ALL' && job.status !== filter) return false
-    if (search && !job.title.toLowerCase().includes(search.toLowerCase()) &&
-        !job.student_name.toLowerCase().includes(search.toLowerCase()) &&
+    if (search && !job.student_name.toLowerCase().includes(search.toLowerCase()) &&
         !job.student_email.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -130,14 +155,6 @@ export default function Dashboard() {
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={addForm.title}
-                    onChange={(e) => setAddForm({ ...addForm, title: e.target.value })}
-                    placeholder="My 3D Print"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={addForm.status} onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}>
                     {statusOptions.map((s) => (
@@ -169,9 +186,51 @@ export default function Dashboard() {
                     placeholder="Any special instructions..."
                   />
                 </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>File</Label>
+                  <div
+                    className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 p-4 text-sm text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:hover:border-neutral-500"
+                    onClick={() => addFileInputRef.current?.click()}
+                  >
+                    {addFile ? (
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <File className="h-5 w-5 text-blue-500" />
+                          <span className="text-sm text-neutral-900 dark:text-neutral-100">{addFile.name}</span>
+                        </div>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setAddFile(null); setAddFileError(null) }} className="text-neutral-400 hover:text-red-500">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        <Upload className="h-6 w-6 text-neutral-400" />
+                        <p>Click to attach a file</p>
+                      </div>
+                    )}
+                  </div>
+                  <input ref={addFileInputRef} type="file" accept={acceptedExtensions.map(e => `.${e}`).join(',')} className="hidden" onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (!f) { setAddFile(null); setAddFileError(null); return }
+                    const ext = f.name.split('.').pop()?.toLowerCase()
+                    if (!ext || !acceptedExtensions.includes(ext)) {
+                      setAddFileError(`Accepted types: ${acceptedExtensions.map(e => `.${e}`).join(', ')}`)
+                      setAddFile(null)
+                      return
+                    }
+                    if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                      setAddFileError(`Max file size is ${MAX_FILE_SIZE_MB} MB`)
+                      setAddFile(null)
+                      return
+                    }
+                    setAddFile(f)
+                    setAddFileError(null)
+                  }} />
+                  {addFileError && <p className="text-sm text-red-600">{addFileError}</p>}
+                </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <Button onClick={handleAddJob} disabled={adding || !addForm.title || !addForm.studentName || !addForm.studentEmail}>
+                <Button onClick={handleAddJob} disabled={adding || !addForm.studentName || !addForm.studentEmail}>
                   {adding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Add Job
                 </Button>
@@ -224,7 +283,7 @@ export default function Dashboard() {
                     className="cursor-pointer border-b dark:border-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
                     onClick={() => navigate(`/manage/jobs/${job.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium">{job.title}</td>
+                    <td className="px-4 py-3 font-medium">{job.student_name}</td>
                     <td className="px-4 py-3">
                       <p>{job.student_name}</p>
                       <p className="text-xs text-neutral-400">{job.student_email}</p>

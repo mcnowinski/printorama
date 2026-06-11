@@ -32,7 +32,7 @@ export default function ConfirmPage() {
 
         if (job.status !== 'AWAITING_CONFIRMATION') {
           setStatus('success')
-          setMessage(`Your job "${job.title}" has already been confirmed.`)
+          setMessage(`Your print job has already been confirmed.`)
           return
         }
 
@@ -51,7 +51,7 @@ export default function ConfirmPage() {
               return
             }
             setStatus('success')
-            setMessage(`Your job "${job.title}" has been confirmed! We'll send updates to ${job.student_email}.`)
+            setMessage(`Your print job has been confirmed! We'll send updates to ${job.student_email}.`)
           })
       })
   }, [token])

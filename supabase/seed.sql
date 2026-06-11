@@ -26,6 +26,16 @@ INSERT INTO dropdown_options (category, label, sort_order) VALUES
 ON CONFLICT (category, label) DO NOTHING;
 
 -- ============================================================
+-- DROPDOWN OPTIONS: Accepted File Types
+-- ============================================================
+INSERT INTO dropdown_options (category, label, sort_order) VALUES
+  ('ACCEPTED_FILE_TYPE', 'stl', 1),
+  ('ACCEPTED_FILE_TYPE', 'gcode', 2),
+  ('ACCEPTED_FILE_TYPE', '3mf', 3),
+  ('ACCEPTED_FILE_TYPE', 'obj', 4)
+ON CONFLICT (category, label) DO NOTHING;
+
+-- ============================================================
 -- DROPDOWN OPTIONS: Filament Colors
 -- ============================================================
 INSERT INTO dropdown_options (category, label, sort_order) VALUES

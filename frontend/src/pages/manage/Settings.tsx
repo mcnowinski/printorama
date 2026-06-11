@@ -14,6 +14,7 @@ const CATEGORIES = [
   { value: 'JOB_STATUS', label: 'Job Status' },
   { value: 'FILAMENT_TYPE', label: 'Filament Type' },
   { value: 'FILAMENT_COLOR', label: 'Filament Color' },
+  { value: 'ACCEPTED_FILE_TYPE', label: 'Accepted File Type' },
 ]
 
 const statusBadge: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
