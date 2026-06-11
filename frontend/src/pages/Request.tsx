@@ -15,9 +15,7 @@ export default function Request() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [jobLink, setJobLink] = useState('')
   const [requestsOpen, setRequestsOpen] = useState(true)
-  const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false)
   const [acceptedExtensions, setAcceptedExtensions] = useState<string[]>([])
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
@@ -30,10 +28,7 @@ export default function Request() {
 
   useEffect(() => {
     supabase.from('system_settings').select('*').limit(1).single().then(({ data }) => {
-      if (data) {
-        setRequestsOpen(data.requests_open)
-        setEmailConfirmationRequired(data.email_confirmation_required)
-      }
+      if (data) setRequestsOpen(data.requests_open)
     })
 
     supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
@@ -102,40 +97,20 @@ export default function Request() {
       fileUrl = urlData.publicUrl
     }
 
-    const confirmationToken = emailConfirmationRequired
-      ? crypto.randomUUID()
-      : null
-
-    const { data: job, error } = await supabase
-      .from('jobs')
+    const { error } = await supabase
+      .from('job_queue')
       .insert({
         student_name: form.studentName,
         student_email: form.studentEmail,
         student_notes: form.studentNotes || null,
-        status: emailConfirmationRequired ? 'AWAITING_CONFIRMATION' : 'RECEIVED',
-        confirmation_token: confirmationToken,
         file_url: fileUrl,
+        status: 'PENDING',
       })
-      .select('id')
-      .single()
 
     if (error) {
-      console.error('Job insert failed:', error.message || error)
+      console.error('Queue insert failed:', error.message || error)
       setLoading(false)
       return
-    }
-
-    if (emailConfirmationRequired && confirmationToken) {
-      const link = `${window.location.origin}/confirm?token=${confirmationToken}`
-      await supabase.from('notifications').insert({
-        job_id: job.id,
-        recipient: form.studentEmail,
-        type: 'CONFIRMATION',
-        message: `Confirm your print job: ${link}`,
-      })
-      setJobLink(link)
-    } else {
-      setJobLink(`${window.location.origin}/status/${job.id}`)
     }
 
     setSubmitted(true)
@@ -163,26 +138,23 @@ export default function Request() {
         <CardHeader>
           <CardTitle>Job Submitted!</CardTitle>
           <CardDescription>
-            Your print job has been {emailConfirmationRequired ? 'registered' : 'submitted'}.
+            Your print job request has been submitted.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {emailConfirmationRequired ? (
-            <p className="text-sm text-neutral-600">
-              Check your email at <strong>{form.studentEmail}</strong> for a confirmation link.
-              Your job won't be queued until you confirm.
-            </p>
-          ) : (
-            <p className="text-sm text-neutral-600">
-              Your job link: <a href={jobLink} className="text-blue-600 underline">{jobLink}</a>
-            </p>
-          )}
+          <p className="text-sm text-neutral-600">
+            Your request is now in the review queue. A lab manager will review it and
+            you'll receive updates at <strong>{form.studentEmail}</strong>.
+          </p>
           {file && (
             <p className="text-sm text-neutral-500">
               File uploaded: {file.name}
             </p>
           )}
-          <Button onClick={() => navigate('/')}>Back to Home</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate('/status')}>Check Status</Button>
+            <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
+          </div>
         </CardContent>
       </Card>
     )

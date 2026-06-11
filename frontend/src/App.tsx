@@ -6,7 +6,6 @@ import Request from './pages/Request'
 import Status from './pages/Status'
 import StatusDetail from './pages/StatusDetail'
 import Login from './pages/Login'
-import ConfirmPage from './pages/ConfirmPage'
 import Dashboard from './pages/manage/Dashboard'
 import ManageJobDetail from './pages/manage/JobDetail'
 import Users from './pages/manage/Users'
@@ -33,7 +32,6 @@ function App() {
             <Route path="/status" element={<Status />} />
             <Route path="/status/:id" element={<StatusDetail />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/confirm" element={<ConfirmPage />} />
 
             <Route path="/manage" element={
               <ProtectedRoute>
