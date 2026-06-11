@@ -136,7 +136,7 @@ export default function Users() {
                       <TableCell>
                         <Select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="w-32">
                           <option value="MANAGER">Manager</option>
-                          <option value="ADMINISTRATOR">Admin</option>
+                          <option value="ADMINISTRATOR">Administrator</option>
                         </Select>
                       </TableCell>
                       <TableCell>

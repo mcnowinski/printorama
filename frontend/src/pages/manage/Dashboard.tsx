@@ -5,8 +5,11 @@ import { useAuth } from '../../contexts/AuthContext'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
 import { Select } from '../../components/ui/select'
-import { Card } from '../../components/ui/card'
-import { Search, Settings, Users } from 'lucide-react'
+import { Label } from '../../components/ui/label'
+import { Textarea } from '../../components/ui/textarea'
+import { Card, CardContent } from '../../components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Search, Settings, Users, Plus, Loader2 } from 'lucide-react'
 
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
@@ -24,9 +27,18 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<any[]>([])
   const [filter, setFilter] = useState('ALL')
   const [search, setSearch] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [statusOptions, setStatusOptions] = useState<{ label: string }[]>([])
+  const [addForm, setAddForm] = useState({
+    title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
+  })
 
   useEffect(() => {
     loadJobs()
+    supabase.from('dropdown_options').select('label').eq('category', 'JOB_STATUS').order('sort_order').then(({ data }) => {
+      setStatusOptions(data || [])
+    })
   }, [])
 
   async function loadJobs() {
@@ -36,6 +48,22 @@ export default function Dashboard() {
       .order('created_at', { ascending: false })
 
     setJobs(data || [])
+  }
+
+  async function handleAddJob() {
+    if (!addForm.title.trim() || !addForm.studentName.trim() || !addForm.studentEmail.trim()) return
+    setAdding(true)
+    await supabase.from('jobs').insert({
+      title: addForm.title.trim(),
+      student_name: addForm.studentName.trim(),
+      student_email: addForm.studentEmail.trim(),
+      student_notes: addForm.studentNotes.trim() || null,
+      status: addForm.status,
+    })
+    setAdding(false)
+    setShowAddForm(false)
+    setAddForm({ title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
+    loadJobs()
   }
 
   const filtered = jobs.filter((job) => {
@@ -86,8 +114,72 @@ export default function Dashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Job Queue</h2>
-          <p className="text-sm text-neutral-500">{filtered.length} jobs</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-neutral-500">{filtered.length} jobs</p>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <Plus className="h-4 w-4" /> Add Job
+            </button>
+          </div>
         </div>
+
+        {showAddForm && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    value={addForm.title}
+                    onChange={(e) => setAddForm({ ...addForm, title: e.target.value })}
+                    placeholder="My 3D Print"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={addForm.status} onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}>
+                    {statusOptions.map((s) => (
+                      <option key={s.label} value={s.label}>{s.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Student Name</Label>
+                  <Input
+                    value={addForm.studentName}
+                    onChange={(e) => setAddForm({ ...addForm, studentName: e.target.value })}
+                    placeholder="Jane Doe"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Student Email</Label>
+                  <Input
+                    value={addForm.studentEmail}
+                    onChange={(e) => setAddForm({ ...addForm, studentEmail: e.target.value })}
+                    placeholder="jane@vt.edu"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={addForm.studentNotes}
+                    onChange={(e) => setAddForm({ ...addForm, studentNotes: e.target.value })}
+                    placeholder="Any special instructions..."
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2">
+                <Button onClick={handleAddJob} disabled={adding || !addForm.title || !addForm.studentName || !addForm.studentEmail}>
+                  {adding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Add Job
+                </Button>
+                <Button variant="ghost" onClick={() => setShowAddForm(false)}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
