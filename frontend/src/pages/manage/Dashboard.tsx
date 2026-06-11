@@ -146,14 +146,25 @@ export default function Dashboard() {
     loadQueue()
   }
 
-  const filtered = jobs.filter((job) => {
-    if (filter !== 'ALL' && job.status !== filter) return false
-    if (search && !job.student_name.toLowerCase().includes(search.toLowerCase()) &&
-        !job.student_email.toLowerCase().includes(search.toLowerCase())) return false
+  const allItems = [
+    ...queue.map((q: any) => ({ ...q, _isQueue: true as const })),
+    ...jobs.map((j: any) => ({ ...j, _isQueue: false as const })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+  const filtered = allItems.filter((item) => {
+    if (filter !== 'ALL') {
+      if (item._isQueue) return filter === 'PENDING_REVIEW'
+      if (item.status !== filter) return false
+    }
+    if (search && !item.student_name.toLowerCase().includes(search.toLowerCase()) &&
+        !item.student_email.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
-  const statuses = [...new Set(jobs.map((j) => j.status))]
+  const statuses = [...new Set([
+    'PENDING_REVIEW',
+    ...jobs.map((j) => j.status),
+  ])]
   const isAdmin = profile?.role === 'ADMINISTRATOR'
 
   return (
@@ -180,73 +191,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {queue.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Pending Review ({queue.length})</h2>
-          <div className="space-y-3">
-            {queue.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="font-medium text-neutral-500">Student:</span> {item.student_name}</div>
-                    <div><span className="font-medium text-neutral-500">Email:</span> {item.student_email}</div>
-                    {item.student_notes && (
-                      <div className="col-span-2"><span className="font-medium text-neutral-500">Notes:</span> {item.student_notes}</div>
-                    )}
-                    {item.file_url && (
-                      <div className="col-span-2">
-                        <span className="font-medium text-neutral-500">File:</span>{' '}
-                        <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-400">Download</a>
-                      </div>
-                    )}
-                    <div><span className="font-medium text-neutral-500">Submitted:</span> {new Date(item.created_at).toLocaleString()}</div>
-                  </div>
-
-                  {approvingId === item.id ? (
-                    <div className="mt-4 space-y-3 rounded-lg border p-4">
-                      <p className="text-sm font-medium">Approve as:</p>
-                      <div className="flex gap-4">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Status</Label>
-                          <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-40">
-                            {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Printer</Label>
-                          <Select value={approvePrinter} onChange={(e) => setApprovePrinter(e.target.value)} className="w-48">
-                            <option value="">Unassigned</option>
-                            {printers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleApprove(item)}><Check className="mr-1 h-4 w-4" /> Confirm</Button>
-                        <Button variant="ghost" size="sm" onClick={() => { setApprovingId(null); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>Cancel</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex gap-2">
-                      <Button size="sm" onClick={() => { setApprovingId(item.id); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>
-                        <Check className="mr-1 h-4 w-4" /> Approve
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleReject(item.id)}>
-                        <XCircle className="mr-1 h-4 w-4" /> Reject
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Job Queue</h2>
+          <h2 className="text-lg font-semibold">All Requests</h2>
           <div className="flex items-center gap-3">
-            <p className="text-sm text-neutral-500">{filtered.length} jobs</p>
+            <p className="text-sm text-neutral-500">{filtered.length} total{queue.length > 0 ? ` (${queue.length} pending)` : ''}</p>
             <button onClick={() => setShowAddForm(!showAddForm)}
               className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
               <Plus className="h-4 w-4" /> Add Job
@@ -324,26 +273,72 @@ export default function Dashboard() {
                 <th className="h-12 px-4 font-medium text-neutral-500">Status</th>
                 <th className="h-12 px-4 font-medium text-neutral-500">Printer</th>
                 <th className="h-12 px-4 font-medium text-neutral-500">Date</th>
+                <th className="h-12 px-4 font-medium text-neutral-500"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No jobs found.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
               ) : (
-                filtered.map((job) => (
-                  <tr key={job.id} className="cursor-pointer border-b dark:border-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
-                    onClick={() => navigate(`/manage/jobs/${job.id}`)}>
-                    <td className="px-4 py-3 font-medium">{job.student_name}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{job.student_email}</td>
-                    <td className="px-4 py-3"><Badge variant={statusColors[job.status] || 'default'}>{job.status}</Badge></td>
-                    <td className="px-4 py-3">
-                      {job.printers ? (
-                        <span className={job.printers.status === 'OFFLINE' ? 'text-neutral-300 dark:text-neutral-700' : ''}>{job.printers.name}</span>
-                      ) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{new Date(job.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))
+                filtered.map((item) => {
+                  if (item._isQueue) {
+                    return (
+                      <tr key={item.id} className="border-b dark:border-neutral-800 transition-colors">
+                        <td className="px-4 py-3 font-medium">{item.student_name}</td>
+                        <td className="px-4 py-3 text-sm text-neutral-500">{item.student_email}</td>
+                        <td className="px-4 py-3">
+                          {item.file_url && (
+                            <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="mr-2 text-xs text-blue-600 underline dark:text-blue-400">File</a>
+                          )}
+                          <Badge variant="warning">Pending Review</Badge>
+                        </td>
+                        <td className="px-4 py-3">—</td>
+                        <td className="px-4 py-3 text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1">
+                            {approvingId === item.id ? (
+                              <>
+                                <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-28 h-8 text-xs">
+                                  {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+                                </Select>
+                                <Select value={approvePrinter} onChange={(e) => setApprovePrinter(e.target.value)} className="w-32 h-8 text-xs">
+                                  <option value="">Printer</option>
+                                  {printers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </Select>
+                                <Button size="sm" className="h-8 text-xs" onClick={() => handleApprove(item)}><Check className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setApprovingId(null); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>X</Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button size="sm" className="h-8 text-xs" onClick={() => { setApprovingId(item.id); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>
+                                  <Check className="mr-1 h-3 w-3" /> Approve
+                                </Button>
+                                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleReject(item.id)}>
+                                  <XCircle className="mr-1 h-3 w-3" /> Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
+                  return (
+                    <tr key={item.id} className="cursor-pointer border-b dark:border-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                      onClick={() => navigate(`/manage/jobs/${item.id}`)}>
+                      <td className="px-4 py-3 font-medium">{item.student_name}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-500">{item.student_email}</td>
+                      <td className="px-4 py-3"><Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge></td>
+                      <td className="px-4 py-3">
+                        {item.printers ? (
+                          <span className={item.printers.status === 'OFFLINE' ? 'text-neutral-300 dark:text-neutral-700' : ''}>{item.printers.name}</span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td className="px-4 py-3"></td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

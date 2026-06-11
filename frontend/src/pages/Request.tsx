@@ -143,7 +143,7 @@ export default function Request() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-neutral-600">
-            Your request is now in the review queue. A lab manager will review it and
+            Your request is now in the queue. Staff will review it and
             you'll receive updates at <strong>{form.studentEmail}</strong>.
           </p>
           {file && (
