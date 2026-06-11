@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -7,7 +8,7 @@ import { Label } from '../../components/ui/label'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table'
-import { Plus, Trash2, Loader2, Pencil } from 'lucide-react'
+import { Plus, Trash2, Loader2, Pencil, ArrowLeft } from 'lucide-react'
 
 const CATEGORIES = [
   { value: 'JOB_STATUS', label: 'Job Status' },
@@ -21,6 +22,7 @@ const statusBadge: Record<string, 'default' | 'success' | 'warning' | 'destructi
 } as any
 
 export default function Settings() {
+  const navigate = useNavigate()
   const [settings, setSettings] = useState<any>(null)
   const [saving, setSaving] = useState(false)
 
@@ -138,8 +140,13 @@ export default function Settings() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-neutral-500">System configuration, printer management, and dropdown lists</p>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/manage')} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-2xl font-bold">Settings</h1>
+        </div>
+        <p className="mt-1 text-sm text-neutral-500">System configuration, printer management, and dropdown lists</p>
       </div>
 
       <Card>

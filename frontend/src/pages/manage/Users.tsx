@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -6,9 +7,10 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Select } from '../../components/ui/select'
-import { UserPlus, Loader2, Pencil } from 'lucide-react'
+import { UserPlus, Loader2, Pencil, ArrowLeft } from 'lucide-react'
 
 export default function Users() {
+  const navigate = useNavigate()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showInvite, setShowInvite] = useState(false)
@@ -80,7 +82,12 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">User Management</h1>
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/manage')} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-2xl font-bold">User Management</h1>
+        </div>
         <Button onClick={() => setShowInvite(!showInvite)}>
           <UserPlus className="mr-2 h-4 w-4" /> Invite User
         </Button>
