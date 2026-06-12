@@ -75,31 +75,23 @@ export default function ManageJobDetail() {
     navigate('/manage')
   }
 
-  async function handleDelete() {
-    if (!id || !confirm('Delete this job?')) return
-    await supabase.from('jobs').delete().eq('id', id)
-    navigate('/manage')
-  }
-
   if (!job) return <div className="py-12 text-center text-neutral-500">Loading...</div>
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <button onClick={() => navigate('/manage')} className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900">
-        <ArrowLeft className="mr-1 h-4 w-4" /> Back to Queue
+        <ArrowLeft className="mr-1 h-4 w-4" /> Back to Job List
       </button>
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
-            <CardTitle>Job Details</CardTitle>
-            <p className="text-sm text-neutral-500">
-              {job.student_name} &lt;{job.student_email}&gt;
-            </p>
+            <CardTitle>Job for {job.student_name}</CardTitle>
+            <p className="text-sm text-neutral-500">{job.student_email}</p>
           </div>
-          <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
+          {/* <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
             {job.status}
-          </Badge>
+          </Badge> */}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -117,6 +109,12 @@ export default function ManageJobDetail() {
                 {job.filament_type}{job.filament_color ? ` (${job.filament_color})` : ''}
               </div>
             )}
+            {job.largest_dimension && (
+              <div>
+                <span className="font-medium text-neutral-500">Max. Dimension:</span>{' '}
+                {job.largest_dimension} {job.dimension_unit || 'mm'}
+              </div>
+            )}
             {job.file_url && (
               <div className="col-span-2">
                 <span className="font-medium text-neutral-500">File:</span>{' '}
@@ -132,44 +130,39 @@ export default function ManageJobDetail() {
               </div>
             )}
           </div>
-
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="font-medium">Edit Job</h3>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-                {statuses.map((s) => (
-                  <option key={s.label} value={s.label}>{s.label}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Assign Printer</Label>
-              <Select value={printerId} onChange={(e) => setPrinterId(e.target.value)}>
-                <option value="">Unassigned</option>
-                {printers.map((p) => (
-                  <option key={p.id} value={p.id} className={p.status === 'OFFLINE' ? 'text-neutral-400' : ''}>
-                    {p.name}{p.status === 'OFFLINE' ? ' (offline)' : ''}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Staff Notes</Label>
-              <Textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Internal notes about this job..."
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>Delete Job</Button>
-            </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              {statuses.map((s) => (
+                <option key={s.label} value={s.label}>{s.label}</option>
+              ))}
+            </Select>
           </div>
+          <div className="space-y-2">
+            <Label>Printer</Label>
+            <Select value={printerId} onChange={(e) => setPrinterId(e.target.value)}>
+              <option value="">Unassigned</option>
+              {printers.map((p) => (
+                <option key={p.id} value={p.id} className={p.status === 'OFFLINE' ? 'text-neutral-400' : ''}>
+                  {p.name}{p.status === 'OFFLINE' ? ' (offline)' : ''}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Staff Notes</Label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Internal notes about this job..."
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+                      </div>
         </CardContent>
       </Card>
     </div>

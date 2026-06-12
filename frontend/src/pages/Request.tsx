@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
+import { Select } from '../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import { Loader2, Upload, File, X } from 'lucide-react'
 
@@ -24,6 +25,8 @@ export default function Request() {
     studentName: '',
     studentEmail: '',
     studentNotes: '',
+    largestDimension: '',
+    dimensionUnit: 'mm',
   })
 
   useEffect(() => {
@@ -72,30 +75,29 @@ export default function Request() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.largestDimension) return
+    if (!file) { setFileError('Please select a file to upload.'); return }
     setLoading(true)
 
     let fileUrl: string | null = null
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${crypto.randomUUID()}.${fileExt}`
 
-    if (file) {
-      const fileExt = file.name.split('.').pop()
-      const filePath = `${crypto.randomUUID()}.${fileExt}`
+    const { error: uploadError } = await supabase.storage
+      .from('job-files')
+      .upload(filePath, file)
 
-      const { error: uploadError } = await supabase.storage
-        .from('job-files')
-        .upload(filePath, file)
-
-      if (uploadError) {
-        console.error(uploadError)
-        setLoading(false)
-        return
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('job-files')
-        .getPublicUrl(filePath)
-
-      fileUrl = urlData.publicUrl
+    if (uploadError) {
+      console.error(uploadError)
+      setLoading(false)
+      return
     }
+
+    const { data: urlData } = supabase.storage
+      .from('job-files')
+      .getPublicUrl(filePath)
+
+    fileUrl = urlData.publicUrl
 
     const { error } = await supabase
       .from('job_queue')
@@ -104,6 +106,8 @@ export default function Request() {
         student_email: form.studentEmail,
         student_notes: form.studentNotes || null,
         file_url: fileUrl,
+        largest_dimension: form.largestDimension ? parseFloat(form.largestDimension) : null,
+        dimension_unit: form.dimensionUnit,
         status: 'PENDING',
       })
 
@@ -171,7 +175,7 @@ export default function Request() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Your Name</Label>
+            <Label htmlFor="name">Your Name <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               required
@@ -181,7 +185,7 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Your Email</Label>
+            <Label htmlFor="email">Your Email <span className="text-red-500">*</span></Label>
             <Input
               id="email"
               type="email"
@@ -192,16 +196,7 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any special instructions..."
-              value={form.studentNotes}
-              onChange={(e) => setForm({ ...form, studentNotes: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>File</Label>
+            <Label>File <span className="text-red-500">*</span></Label>
             <div
               className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 p-6 text-sm text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:hover:border-neutral-500"
               onClick={() => fileInputRef.current?.click()}
@@ -240,6 +235,35 @@ export default function Request() {
               <p className="text-sm text-red-600">{fileError}</p>
             )}
           </div>
+          <div className="space-y-2">
+            <Label>Largest dimension <span className="text-red-500">*</span></Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min={0}
+                step="any"
+                placeholder="e.g. 200"
+                required
+                value={form.largestDimension}
+                onChange={(e) => setForm({ ...form, largestDimension: e.target.value })}
+                className="flex-1"
+              />
+              <Select value={form.dimensionUnit} onChange={(e) => setForm({ ...form, dimensionUnit: e.target.value })} className="w-20">
+                <option value="mm">mm</option>
+                <option value="in">in</option>
+              </Select>
+            </div>
+            <p className="text-xs text-neutral-400">Approximate largest dimension of your part. Helps the lab assign a suitable printer.</p>
+          </div>          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Any special instructions..."
+              value={form.studentNotes}
+              onChange={(e) => setForm({ ...form, studentNotes: e.target.value })}
+            />
+          </div>         
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit Job Request

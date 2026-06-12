@@ -80,6 +80,12 @@ export default function StatusDetail() {
                 <p>{job.printers?.name || 'Not yet assigned'}</p>
               </div>
             )}
+            {job.largest_dimension && (
+              <div>
+                <p className="text-sm font-medium text-neutral-500">Largest Dimension</p>
+                <p>{job.largest_dimension} {job.dimension_unit || 'mm'}</p>
+              </div>
+            )}
             {job.file_url && (
               <div className="col-span-2">
                 <p className="text-sm font-medium text-neutral-500">File</p>

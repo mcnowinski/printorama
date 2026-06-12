@@ -9,9 +9,22 @@ import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { Card, CardContent } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Search, Settings, Users, Plus, Loader2, Upload, File, X, Check, XCircle } from 'lucide-react'
+import { Search, Settings, Users, Plus, Loader2, Upload, File, X, Pencil } from 'lucide-react'
 
 const MAX_FILE_SIZE_MB = 50
+
+function formatDate(d: string) {
+  const date = new Date(d)
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  let hh = date.getHours()
+  const ampm = hh >= 12 ? 'PM' : 'AM'
+  hh = hh % 12 || 12
+  const mi = String(date.getMinutes()).padStart(2, '0')
+  const ss = String(date.getSeconds()).padStart(2, '0')
+  return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss} ${ampm}`
+}
 
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
@@ -37,13 +50,11 @@ export default function Dashboard() {
   const [addFile, setAddFile] = useState<File | null>(null)
   const [addFileError, setAddFileError] = useState<string | null>(null)
   const addFileInputRef = useRef<HTMLInputElement>(null)
+  const [sortField, setSortField] = useState('created_at')
+  const [sortDir, setSortDir] = useState('desc')
   const [addForm, setAddForm] = useState({
     studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
   })
-  const [approvingId, setApprovingId] = useState<string | null>(null)
-  const [approveStatus, setApproveStatus] = useState('RECEIVED')
-  const [approvePrinter, setApprovePrinter] = useState('')
-  const [printers, setPrinters] = useState<any[]>([])
 
   useEffect(() => {
     loadJobs()
@@ -54,25 +65,15 @@ export default function Dashboard() {
     supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
       setAcceptedExtensions((data || []).map((d: any) => d.label))
     })
-    supabase.from('printers').select('*').order('name').then(({ data }) => {
-      setPrinters(data || [])
-    })
   }, [])
 
   async function loadJobs() {
-    const { data } = await supabase
-      .from('jobs')
-      .select('*, printers(name, status)')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('jobs').select('*, printers(name, status)').order('created_at', { ascending: false })
     setJobs(data || [])
   }
 
   async function loadQueue() {
-    const { data } = await supabase
-      .from('job_queue')
-      .select('*')
-      .eq('status', 'PENDING')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('job_queue').select('*').eq('status', 'PENDING').order('created_at', { ascending: false })
     setQueue(data || [])
   }
 
@@ -85,11 +86,7 @@ export default function Dashboard() {
       const fileExt = addFile.name.split('.').pop()
       const filePath = `${crypto.randomUUID()}.${fileExt}`
       const { error: uploadError } = await supabase.storage.from('job-files').upload(filePath, addFile)
-      if (uploadError) {
-        console.error(uploadError)
-        setAdding(false)
-        return
-      }
+      if (uploadError) { console.error(uploadError); setAdding(false); return }
       const { data: urlData } = supabase.storage.from('job-files').getPublicUrl(filePath)
       fileUrl = urlData.publicUrl
     }
@@ -109,62 +106,48 @@ export default function Dashboard() {
     loadJobs()
   }
 
-  async function handleApprove(queueItem: any) {
-    const { data: job, error } = await supabase
-      .from('jobs')
-      .insert({
-        student_name: queueItem.student_name,
-        student_email: queueItem.student_email,
-        student_notes: queueItem.student_notes,
-        file_url: queueItem.file_url,
-        status: approveStatus,
-        printer_id: approvePrinter || null,
-      })
-      .select('id')
-      .single()
-
-    if (error) {
-      console.error('Approve failed:', error.message || error)
-      return
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir(field === 'created_at' ? 'desc' : 'asc')
     }
-
-    await supabase
-      .from('job_queue')
-      .update({ status: 'APPROVED', job_id: job.id })
-      .eq('id', queueItem.id)
-
-    setApprovingId(null)
-    setApproveStatus('RECEIVED')
-    setApprovePrinter('')
-    loadJobs()
-    loadQueue()
-  }
-
-  async function handleReject(id: string) {
-    if (!confirm('Reject this submission?')) return
-    await supabase.from('job_queue').update({ status: 'REJECTED' }).eq('id', id)
-    loadQueue()
   }
 
   const allItems = [
     ...queue.map((q: any) => ({ ...q, _isQueue: true as const })),
     ...jobs.map((j: any) => ({ ...j, _isQueue: false as const })),
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  ]
 
-  const filtered = allItems.filter((item) => {
-    if (filter !== 'ALL') {
-      if (item._isQueue) return filter === 'PENDING_REVIEW'
-      if (item.status !== filter) return false
-    }
-    if (search && !item.student_name.toLowerCase().includes(search.toLowerCase()) &&
-        !item.student_email.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
+  const filtered = allItems
+    .filter((item) => {
+      if (filter !== 'ALL') {
+        if (item._isQueue) return filter === 'PENDING_REVIEW'
+        if (item.status !== filter) return false
+      }
+      if (search && !item.student_name.toLowerCase().includes(search.toLowerCase()) &&
+          !item.student_email.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+    .sort((a, b) => {
+      let cmp = 0
+      if (sortField === 'student_name') cmp = a.student_name.localeCompare(b.student_name)
+      else if (sortField === 'status') {
+        const av = a._isQueue ? 'PENDING' : a.status
+        const bv = b._isQueue ? 'PENDING' : b.status
+        cmp = av.localeCompare(bv)
+      } else if (sortField === 'printer') {
+        cmp = (a.printers?.name || '').localeCompare(b.printers?.name || '')
+      } else {
+        const at = a.submitted_at || a.created_at
+        const bt = b.submitted_at || b.created_at
+        cmp = new Date(at).getTime() - new Date(bt).getTime()
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
 
-  const statuses = [...new Set([
-    'PENDING_REVIEW',
-    ...jobs.map((j) => j.status),
-  ])]
+  const statuses = [...new Set(['PENDING_REVIEW', ...jobs.map((j) => j.status)])]
   const isAdmin = profile?.role === 'ADMINISTRATOR'
 
   return (
@@ -193,7 +176,7 @@ export default function Dashboard() {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">All Requests</h2>
+          <h2 className="text-lg font-semibold">Job List</h2>
           <div className="flex items-center gap-3">
             <p className="text-sm text-neutral-500">{filtered.length} total{queue.length > 0 ? ` (${queue.length} pending)` : ''}</p>
             <button onClick={() => setShowAddForm(!showAddForm)}
@@ -255,7 +238,7 @@ export default function Dashboard() {
 
         <div className="flex flex-wrap gap-4">
           <Select value={filter} onChange={(e) => setFilter(e.target.value)} className="w-40">
-            <option value="ALL">All Statuses</option>
+            <option value="ALL">ALL</option>
             {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
           </Select>
           <div className="relative flex-1 max-w-sm">
@@ -268,77 +251,46 @@ export default function Dashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b dark:border-neutral-800 text-left">
-                <th className="h-12 px-4 font-medium text-neutral-500">Student</th>
-                <th className="h-12 px-4 font-medium text-neutral-500">Email</th>
-                <th className="h-12 px-4 font-medium text-neutral-500">Status</th>
-                <th className="h-12 px-4 font-medium text-neutral-500">Printer</th>
-                <th className="h-12 px-4 font-medium text-neutral-500">Date</th>
+                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('student_name')}>
+                  Name{sortField === 'student_name' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                </th>
+                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('created_at')}>
+                  Submitted{sortField === 'created_at' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                </th>
+                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('status')}>
+                  Status{sortField === 'status' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                </th>
+                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('printer')}>
+                  Printer{sortField === 'printer' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                </th>
                 <th className="h-12 px-4 font-medium text-neutral-500"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
               ) : (
-                filtered.map((item) => {
-                  if (item._isQueue) {
-                    return (
-                      <tr key={item.id} className="border-b dark:border-neutral-800 transition-colors">
-                        <td className="px-4 py-3 font-medium">{item.student_name}</td>
-                        <td className="px-4 py-3 text-sm text-neutral-500">{item.student_email}</td>
-                        <td className="px-4 py-3">
-                          {item.file_url && (
-                            <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="mr-2 text-xs text-blue-600 underline dark:text-blue-400">File</a>
-                          )}
-                          <Badge variant="warning">Pending Review</Badge>
-                        </td>
-                        <td className="px-4 py-3">—</td>
-                        <td className="px-4 py-3 text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
-                            {approvingId === item.id ? (
-                              <>
-                                <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-28 h-8 text-xs">
-                                  {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
-                                </Select>
-                                <Select value={approvePrinter} onChange={(e) => setApprovePrinter(e.target.value)} className="w-32 h-8 text-xs">
-                                  <option value="">Printer</option>
-                                  {printers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                </Select>
-                                <Button size="sm" className="h-8 text-xs" onClick={() => handleApprove(item)}><Check className="h-3 w-3" /></Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setApprovingId(null); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>X</Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button size="sm" className="h-8 text-xs" onClick={() => { setApprovingId(item.id); setApproveStatus('RECEIVED'); setApprovePrinter('') }}>
-                                  <Check className="mr-1 h-3 w-3" /> Approve
-                                </Button>
-                                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleReject(item.id)}>
-                                  <XCircle className="mr-1 h-3 w-3" /> Reject
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  }
-                  return (
-                    <tr key={item.id} className="cursor-pointer border-b dark:border-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900"
-                      onClick={() => navigate(`/manage/jobs/${item.id}`)}>
-                      <td className="px-4 py-3 font-medium">{item.student_name}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-500">{item.student_email}</td>
-                      <td className="px-4 py-3"><Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge></td>
-                      <td className="px-4 py-3">
-                        {item.printers ? (
-                          <span className={item.printers.status === 'OFFLINE' ? 'text-neutral-300 dark:text-neutral-700' : ''}>{item.printers.name}</span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</td>
-                      <td className="px-4 py-3"></td>
-                    </tr>
-                  )
-                })
+                filtered.map((item) => (
+                  <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
+                    <td className="px-4 py-3 font-medium">{item.student_name}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">{formatDate(item.submitted_at || item.created_at)}</td>
+                    <td className="px-4 py-3">
+                      {item._isQueue ? (
+                        <Badge variant="warning">PENDING</Badge>
+                      ) : (
+                        <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {item.printers?.name || '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button variant="ghost" size="sm" onClick={() => navigate(item._isQueue ? `/manage/queue/${item.id}` : `/manage/jobs/${item.id}`)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

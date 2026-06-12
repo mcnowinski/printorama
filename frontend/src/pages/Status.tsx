@@ -28,7 +28,7 @@ export default function Status() {
     setSearched(true)
 
     const [queueResult, jobsResult] = await Promise.all([
-      supabase.from('job_queue').select('*').eq('student_email', email).order('created_at', { ascending: false }),
+      supabase.rpc('get_my_queue_items', { p_email: email }),
       supabase.from('jobs').select('*').eq('student_email', email).order('created_at', { ascending: false }),
     ])
 
@@ -36,7 +36,7 @@ export default function Status() {
       ...(queueResult.data || []).map((q: any) => ({
         ...q,
         _type: 'queue' as const,
-        _status: q.status === 'PENDING' ? 'Pending Review' : q.status === 'APPROVED' ? 'Approved' : 'Not Accepted',
+        _status: q.status === 'PENDING' ? 'PENDING' : q.status === 'APPROVED' ? 'Approved' : 'Not Accepted',
         _statusKey: q.status === 'PENDING' ? 'PENDING' : q.status === 'APPROVED' ? 'RECEIVED' : 'CANCELLED',
       })),
       ...(jobsResult.data || []).map((j: any) => ({
@@ -87,7 +87,7 @@ export default function Status() {
                       <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline dark:text-blue-400">View file</a>
                     )}
                   </div>
-                  <Badge variant="warning">Pending Review</Badge>
+                  <Badge variant="warning">PENDING</Badge>
                 </CardContent>
               </Card>
             ) : item._type === 'queue' && item.status === 'REJECTED' ? (

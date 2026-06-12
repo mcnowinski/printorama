@@ -35,13 +35,15 @@ frontend/
 │   │   └── utils.ts         # cn() helper for class merging
 │   └── pages/
 │       ├── manage/          # Protected staff pages
-│       │   ├── Dashboard.tsx    # Unified All Requests table + role-based links
+│       │   ├── Dashboard.tsx    # Unified sortable table + role-based links
+│       │   ├── QueueDetail.tsx  # Queue item detail + approve (status/printer/save)
 │       │   ├── JobDetail.tsx    # Job edit (status, printer, notes)
+│       │   ├── Profile.tsx      # Self-edit + admin edit (name, email, role, password)
 │       │   ├── Settings.tsx     # Printers, system settings, dropdown options
 │       │   └── Users.tsx        # Staff account management (admin only)
 │       ├── Landing.tsx      # Public landing page
 │       ├── Request.tsx      # Job submission form (student → job_queue)
-│       ├── Status.tsx       # Merged status lookup (queue + jobs)
+│       ├── Status.tsx       # Merged status lookup (queue RPC + jobs)
 │       ├── StatusDetail.tsx # Job detail view (student)
 │       └── Login.tsx        # Staff sign-in form
 │   ├── App.tsx              # Router + protected route wrappers
@@ -58,14 +60,17 @@ frontend/
 All staff routes are under `/manage/` and are protected by `ProtectedRoute`, which checks for an active Supabase session and loads the user's profile from the `users` table.
 
 | Route | Access | Description |
-|---|---|---|
+|---|---|---|---|
 | `/` | Public | Landing page (redirects to `/manage` if authenticated) |
 | `/request` | Public | Student job submission form (writes to `job_queue`) |
-| `/status` | Public | Merged status lookup by email (queries both `job_queue` and `jobs`) |
+| `/status` | Public | Merged status lookup by email (queue RPC + jobs) |
 | `/status/:id` | Public | Individual job detail (student view) |
 | `/login` | Public | Staff sign-in |
-| `/manage` | Staff (any role) | Dashboard — unified "All Requests" table + quick links |
-| `/manage/jobs/:id` | Staff (any role) | Edit job (status, printer, notes, delete) |
+| `/manage` | Staff (any role) | Dashboard — sortable table + quick links |
+| `/manage/queue/:id` | Staff (any role) | Queue item detail (notes, file, dimension, approve) |
+| `/manage/jobs/:id` | Staff (any role) | Edit job (status, printer, notes) |
+| `/manage/profile` | Staff (any role) | Self-edit profile (name, password) |
+| `/manage/profile/:id` | Admin only | Admin edit user (name, email, role, password) |
 | `/manage/users` | Admin only | Invite, edit, remove staff accounts |
 | `/manage/settings` | Admin only | Printer management, system config, dropdown options |
 
@@ -113,12 +118,14 @@ Printers
 ├── notes       TEXT
 └── timestamps
 
-JobQueue
+JobQueue (RLS via SECURITY DEFINER RPC — anon only INSERT)
 ├── id                UUID
 ├── student_name      TEXT
 ├── student_email     TEXT
 ├── student_notes     TEXT
 ├── file_url          TEXT
+├── largest_dimension REAL
+├── dimension_unit    TEXT (mm | in)
 ├── status            TEXT (PENDING | APPROVED | REJECTED)
 ├── job_id            UUID (FK to jobs, set when approved)
 ├── created_at        TIMESTAMPTZ
@@ -132,6 +139,9 @@ Jobs
 ├── student_notes     TEXT
 ├── admin_notes       TEXT
 ├── file_url          TEXT
+├── largest_dimension REAL
+├── dimension_unit    TEXT (mm | in)
+├── submitted_at      TIMESTAMPTZ (copied from queue created_at)
 ├── printer_id        UUID (FK to printers)
 ├── assigned_to       UUID (FK to users)
 └── timestamps
@@ -161,17 +171,18 @@ SystemSettings (singleton row)
 
 ### Permissions Model
 
-Instead of relying solely on RLS, the system uses a hybrid approach:
+The system uses a hybrid approach with RLS and SECURITY DEFINER functions:
 
 **Anonymous role** (students, unauthenticated):
-- `INSERT, SELECT` on `job_queue` — submit and check queue items
+- `INSERT` on `job_queue` — submit new requests
+- `EXECUTE` on `get_my_queue_items(email)` RPC — read own queue items (SECURITY DEFINER, filter-locked to provided email)
 - `SELECT` on `jobs` — check approved jobs by email
 - `SELECT` on `printers`, `dropdown_options`, `system_settings` — public lookups
 
 **Authenticated role** (managers, administrators):
 - `ALL` on all tables — full CRUD via RLS policies
 
-The `job_queue` table deliberately has **no RLS** — it uses GRANT-level permissions only. This avoids the RLS recursion issues that plagued an earlier version where `jobs` was open for anon INSERT.
+The `job_queue` table has RLS enabled: anon can INSERT, authenticated can SELECT/UPDATE. Students read their own items via a SECURITY DEFINER database function that bypasses RLS but is filter-locked to the email parameter they provide — no email enumeration possible.
 
 ### Row-Level Security
 
@@ -239,19 +250,16 @@ Three Supabase Edge Functions (Deno/TypeScript):
 4. Redirected to `/manage`
 
 #### Review and manage the request queue
-1. The Dashboard at `/manage` shows a unified "All Requests" table
-2. **Queue items** (PENDING) appear inline with a "Pending Review" badge
-3. Each queue row has Approve and Reject buttons
-4. Clicking Approve expands the row with:
-   - Status dropdown (set the initial job status, e.g., RECEIVED, PENDING)
-   - Printer assignment dropdown
-   - Confirm button → copies the item to the `jobs` table, updates queue status to APPROVED
-5. Clicking Reject marks the queue item as REJECTED (it disappears from the table)
+1. The Dashboard at `/manage` shows a unified, sortable table with Name, Submitted, Status, and Printer columns
+2. **Queue items** (PENDING) appear with a yellow badge; **Jobs** show their current status badge
+3. Each row has a pencil icon — clicking opens the full detail page:
+   - Queue item → `/manage/queue/:id` — shows notes, file, dimension, timestamps; set status + printer + Save to approve
+   - Job → `/manage/jobs/:id` — edit status, reassign printer, add staff notes
 
-#### Manage the job queue
-1. **Jobs** (approved items) appear in the same table with their current status badge
-2. Clicking a job row opens `/manage/jobs/:id` for editing
-3. Managers can change status, assign printers, add staff notes, and delete jobs
+#### Edit a job
+1. Job detail page shows student info, timestamps, file, dimension, notes
+2. Change the **status**, **assign a printer** (offline printers labeled), add **staff notes**
+3. Saving triggers a notification record for a status-change email to the student
 
 #### Add a job manually
 1. Click "Add Job" above the table → inline form appears
@@ -330,12 +338,18 @@ The static files can be served by any web server (Apache, Nginx, Vercel, Netlify
 ### Backend (Supabase)
 1. Create a Supabase project
 2. Run these SQL files in `supabase/migrations/` in order (via SQL Editor or CLI):
-   - `001_schema.sql` — tables, RLS policies, triggers
-   - `002_printer_notes.sql` — add notes field to printers
-   - `003_storage_bucket.sql` — create job-files storage bucket
-   - `005_drop_title.sql` — drop the unused title column
-   - `010_queue_cleanup.sql` — set up permissions for queue approach
-   - `011_job_queue.sql` — create the job_queue table
+   - `001_schema.sql` — core tables, RLS policies, triggers
+   - `002_printer_notes.sql` — notes field on printers
+   - `003_storage_bucket.sql` — job-files storage bucket
+   - `005_drop_title.sql` — drop unused title column
+   - `010_queue_cleanup.sql` — permissions for queue approach
+   - `011_job_queue.sql` — job_queue table
+   - `012_printer_brand_model.sql` — brand/model free-text columns
+   - `013_drop_fk_notnull.sql` — make legacy FK columns nullable
+   - `014_cleanup_printers.sql` — drop legacy FK columns and tables
+   - `015_largest_dimension.sql` — largest dimension + unit columns
+   - `016_job_queue_rls.sql` — RLS on job_queue + RPC function
+   - `017_submitted_at.sql` — submitted_at on jobs table
 3. Run `supabase/seed.sql` to populate default dropdown options
 4. Deploy Edge Functions via `supabase functions deploy admin-create-user`
 5. Create the first admin user via Auth panel, then:
