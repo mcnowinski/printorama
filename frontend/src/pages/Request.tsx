@@ -106,6 +106,7 @@ export default function Request() {
         student_email: form.studentEmail,
         student_notes: form.studentNotes || null,
         file_url: fileUrl,
+        original_filename: file ? file.name : null,
         largest_dimension: form.largestDimension ? parseFloat(form.largestDimension) : null,
         dimension_unit: form.dimensionUnit,
         status: 'PENDING',

@@ -2,22 +2,11 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Button } from '../../components/ui/button'
-import { Badge } from '../../components/ui/badge'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { Select } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-
-const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
-  PRINTING: 'info',
-  COMPLETE: 'success',
-  FAILED: 'destructive',
-  CANCELLED: 'default',
-  AWAITING_CONFIRMATION: 'default',
-}
 
 export default function ManageJobDetail() {
   const { id } = useParams()

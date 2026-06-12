@@ -36,7 +36,7 @@ export default function QueueDetail() {
   async function handleApprove() {
     if (!id || !item) return
     setSaving(true)
-    const { data: job, error } = await supabase
+    const { error } = await supabase
       .from('jobs')
       .insert({
         student_name: item.student_name,
@@ -54,7 +54,7 @@ export default function QueueDetail() {
 
     if (error) { console.error(error); setSaving(false); return }
 
-    await supabase.from('job_queue').update({ status: 'APPROVED', job_id: job.id }).eq('id', id)
+    await supabase.from('job_queue').delete().eq('id', id)
     setSaving(false)
     navigate('/manage')
   }
@@ -81,7 +81,7 @@ export default function QueueDetail() {
           ) : item.status === 'APPROVED' ? (
             <Badge variant="success">Approved</Badge>
           ) : (
-            <Badge variant="destructive">Rejected</Badge>
+            <Badge variant="destructive">REJECTED</Badge>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
@@ -109,7 +109,7 @@ export default function QueueDetail() {
             <div>
               <p className="text-sm font-medium text-neutral-500">File</p>
               <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
-                Download {item.file_url.split('/').pop()?.split('.').pop()?.toUpperCase() || 'file'}
+                {item.original_filename || item.file_url.split('/').pop()}
               </a>
             </div>
           )}

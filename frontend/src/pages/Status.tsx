@@ -5,8 +5,20 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
+
+function fmt(d: string) {
+  const date = new Date(d)
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  let hh = date.getHours()
+  const ampm = hh >= 12 ? 'PM' : 'AM'
+  hh = hh % 12 || 12
+  const mi = String(date.getMinutes()).padStart(2, '0')
+  const ss = String(date.getSeconds()).padStart(2, '0')
+  return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss} ${ampm}`
+}
 
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
@@ -15,7 +27,6 @@ const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warnin
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',
-  AWAITING_CONFIRMATION: 'default',
 }
 
 export default function Status() {
@@ -29,19 +40,17 @@ export default function Status() {
 
     const [queueResult, jobsResult] = await Promise.all([
       supabase.rpc('get_my_queue_items', { p_email: email }),
-      supabase.from('jobs').select('*').eq('student_email', email).order('created_at', { ascending: false }),
+      supabase.rpc('get_my_jobs', { p_email: email }),
     ])
 
     const mapped = [
-      ...(queueResult.data || []).map((q: any) => ({
+      ...(queueResult.data || []).filter((q: any) => !q.job_id).map((q: any) => ({
         ...q,
-        _type: 'queue' as const,
-        _status: q.status === 'PENDING' ? 'PENDING' : q.status === 'APPROVED' ? 'Approved' : 'Not Accepted',
-        _statusKey: q.status === 'PENDING' ? 'PENDING' : q.status === 'APPROVED' ? 'RECEIVED' : 'CANCELLED',
+        _status: 'PENDING',
+        _statusKey: 'PENDING',
       })),
       ...(jobsResult.data || []).map((j: any) => ({
         ...j,
-        _type: 'job' as const,
         _status: j.status,
         _statusKey: j.status,
       })),
@@ -77,42 +86,21 @@ export default function Status() {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Your Submissions ({items.length})</h2>
           {items.map((item) => (
-            item._type === 'queue' && item.status === 'PENDING' ? (
-              <Card key={item.id}>
-                <CardContent className="flex items-center justify-between py-4">
-                  <div>
-                    <p className="font-medium">{item.student_name}</p>
-                    <p className="text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</p>
-                    {item.file_url && (
-                      <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline dark:text-blue-400">View file</a>
-                    )}
-                  </div>
-                  <Badge variant="warning">PENDING</Badge>
-                </CardContent>
-              </Card>
-            ) : item._type === 'queue' && item.status === 'REJECTED' ? (
-              <Card key={item.id}>
-                <CardContent className="flex items-center justify-between py-4">
-                  <div>
-                    <p className="font-medium">{item.student_name}</p>
-                    <p className="text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <Badge variant="destructive">Not Accepted</Badge>
-                </CardContent>
-              </Card>
-            ) : (
-              <Link key={item.id} to={`/status/${item.job_id || item.id}`}>
-                <Card className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
-                  <CardContent className="flex items-center justify-between py-4">
-                    <div>
-                      <p className="font-medium">{item.student_name}</p>
-                      <p className="text-sm text-neutral-500">{new Date(item.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
-                  </CardContent>
-                </Card>
-              </Link>
-            )
+            <Card key={item.id}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">{item.student_name}</p>
+                  <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
+                </div>
+                <div className="mt-2 space-y-0.5 text-sm text-neutral-500">
+                  <p>Submitted: {fmt(item.submitted_at || item.created_at)}</p>
+                  <p>Last modified: {fmt(item.updated_at || item.created_at)}</p>
+                  {item.original_filename && (
+                    <p>File: {item.original_filename}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
