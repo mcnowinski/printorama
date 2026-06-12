@@ -24,7 +24,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
     else if (adminOnly && profile.role !== 'ADMINISTRATOR') navigate('/manage', { replace: true })
   }, [user, profile, loading, adminOnly, navigate])
 
-  if (loading) return <div className="py-24 text-center text-neutral-500">Loading...</div>
+  if (loading || (!profile && user)) return <div className="py-24 text-center text-neutral-500">Loading...</div>
   if (!user || !profile) return null
   if (adminOnly && profile.role !== 'ADMINISTRATOR') return null
 

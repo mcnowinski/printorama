@@ -28,10 +28,8 @@ export default function Login() {
     const err = await signIn(email, password)
     if (err) {
       setError(err)
-      setLoading(false)
-    } else {
-      navigate('/manage')
     }
+    setLoading(false)
   }
 
   return (
