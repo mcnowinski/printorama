@@ -62,9 +62,9 @@ export default function Settings() {
   }
 
   async function loadPrinters() {
-    supabase.from('printers').select('*').order('name').then(({ data }) => {
-      setPrinters(data || [])
-    })
+    const { data, error } = await supabase.from('printers').select('*').order('name')
+    if (error) console.error('Printers load failed:', error)
+    setPrinters(data || [])
   }
 
   async function handleSave() {
@@ -116,7 +116,7 @@ export default function Settings() {
 
   async function handleAddPrinter() {
     setPrinterSaving(true)
-    await supabase.from('printers').insert({
+    const { error } = await supabase.from('printers').insert({
       name: printerForm.name,
       brand: printerForm.brand,
       model: printerForm.model,
@@ -124,6 +124,11 @@ export default function Settings() {
       status: printerForm.status,
       notes: printerForm.notes,
     })
+    if (error) {
+      console.error('Printer insert failed:', error.message || error)
+      setPrinterSaving(false)
+      return
+    }
     setShowForm(false)
     setPrinterForm({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
     setPrinterSaving(false)
@@ -153,7 +158,7 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <CardTitle>Printers</CardTitle>
-          <CardDescription>Manage the 3D printer fleet.</CardDescription>
+          <CardDescription>Manage the printers.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={() => setShowForm(!showForm)} size="sm">

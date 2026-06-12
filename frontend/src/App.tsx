@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Layout } from './components/layout/Layout'
 import Landing from './pages/Landing'
@@ -13,10 +14,17 @@ import Settings from './pages/manage/Settings'
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (loading) return
+    if (!user || !profile) navigate('/login', { replace: true })
+    else if (adminOnly && profile.role !== 'ADMINISTRATOR') navigate('/manage', { replace: true })
+  }, [user, profile, loading, adminOnly, navigate])
 
   if (loading) return <div className="py-24 text-center text-neutral-500">Loading...</div>
-  if (!user || !profile) return <Navigate to="/login" replace />
-  if (adminOnly && profile.role !== 'ADMINISTRATOR') return <Navigate to="/manage" replace />
+  if (!user || !profile) return null
+  if (adminOnly && profile.role !== 'ADMINISTRATOR') return null
 
   return <>{children}</>
 }

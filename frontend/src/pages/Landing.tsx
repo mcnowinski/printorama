@@ -1,4 +1,5 @@
-import { Link, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,9 +7,13 @@ import { Printer, Search } from 'lucide-react'
 
 export default function Landing() {
   const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) navigate('/manage', { replace: true })
+  }, [user, navigate])
 
   if (loading) return null
-  if (user) return <Navigate to="/manage" replace />
   return (
     <div className="flex flex-col items-center gap-12 py-12">
       <div className="text-center">
