@@ -35,37 +35,16 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 200, headers })
     }
 
-    const { name, email, password, role } = await req.json()
-
-    if (!name || !email || !password || !role) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 200, headers })
-    }
-
-    if (!['MANAGER', 'ADMINISTRATOR'].includes(role)) {
-      return new Response(JSON.stringify({ error: 'Invalid role' }), { status: 200, headers })
+    const { userId, password } = await req.json()
+    if (!userId || !password) {
+      return new Response(JSON.stringify({ error: 'Missing userId or password' }), { status: 200, headers })
     }
 
     const adminClient = createClient(supabaseUrl, supabaseKey)
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    })
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, { password })
 
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), { status: 200, headers })
-    }
-
-    const { error: insertError } = await adminClient.from('users').insert({
-      id: newUser.user.id,
-      name,
-      email,
-      role,
-    })
-
-    if (insertError) {
-      await adminClient.auth.admin.deleteUser(newUser.user.id)
-      return new Response(JSON.stringify({ error: insertError.message }), { status: 200, headers })
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), { status: 200, headers })
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers })

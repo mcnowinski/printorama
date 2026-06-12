@@ -39,6 +39,8 @@ export default function Settings() {
   const [showForm, setShowForm] = useState(false)
   const [printerSaving, setPrinterSaving] = useState(false)
   const [printerForm, setPrinterForm] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
+  const [printerEditingId, setPrinterEditingId] = useState<string | null>(null)
+  const [printerEdit, setPrinterEdit] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
 
   useEffect(() => {
     supabase.from('system_settings').select('*').limit(1).single().then(({ data }) => {
@@ -91,6 +93,7 @@ export default function Settings() {
   }
 
   async function handleDelete(id: string) {
+    if (!confirm('Delete this option?')) return
     await supabase.from('dropdown_options').delete().eq('id', id)
     loadOptions()
   }
@@ -132,6 +135,29 @@ export default function Settings() {
     setShowForm(false)
     setPrinterForm({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
     setPrinterSaving(false)
+    loadPrinters()
+  }
+
+  function startPrinterEdit(p: any) {
+    setPrinterEditingId(p.id)
+    setPrinterEdit({ name: p.name, brand: p.brand || '', model: p.model || '', location: p.location || '', status: p.status, notes: p.notes || '' })
+  }
+
+  function cancelPrinterEdit() {
+    setPrinterEditingId(null)
+  }
+
+  async function handleSavePrinterEdit() {
+    if (!printerEditingId || !printerEdit.name.trim()) return
+    await supabase.from('printers').update({
+      name: printerEdit.name.trim(),
+      brand: printerEdit.brand.trim(),
+      model: printerEdit.model.trim(),
+      location: printerEdit.location.trim(),
+      status: printerEdit.status,
+      notes: printerEdit.notes.trim(),
+    }).eq('id', printerEditingId)
+    setPrinterEditingId(null)
     loadPrinters()
   }
 
@@ -237,21 +263,54 @@ export default function Settings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {printers.map((p) => (
-                <TableRow key={p.id} className={p.status === 'OFFLINE' ? 'opacity-50' : ''}>
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell>{p.brand}</TableCell>
-                  <TableCell>{p.model}</TableCell>
-                  <TableCell>{p.location}</TableCell>
-                  <TableCell>
-                    <Badge variant={(statusBadge[p.status] || 'default') as any}>{p.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-neutral-500 max-w-48 truncate">{p.notes || '—'}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeletePrinter(p.id)}>Remove</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {printers.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="py-8 text-center text-neutral-500">No printers yet.</TableCell></TableRow>
+              ) : (
+                printers.map((p) => (
+                  printerEditingId === p.id ? (
+                    <TableRow key={p.id}>
+                      <TableCell><Input value={printerEdit.name} onChange={(e) => setPrinterEdit({ ...printerEdit, name: e.target.value })} className="h-8 w-32" /></TableCell>
+                      <TableCell><Input value={printerEdit.brand} onChange={(e) => setPrinterEdit({ ...printerEdit, brand: e.target.value })} className="h-8 w-28" /></TableCell>
+                      <TableCell><Input value={printerEdit.model} onChange={(e) => setPrinterEdit({ ...printerEdit, model: e.target.value })} className="h-8 w-28" /></TableCell>
+                      <TableCell><Input value={printerEdit.location} onChange={(e) => setPrinterEdit({ ...printerEdit, location: e.target.value })} className="h-8 w-32" /></TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <label className="flex items-center gap-1 text-xs"><input type="radio" name={`ps-${p.id}`} value="ONLINE" checked={printerEdit.status === 'ONLINE'} onChange={() => setPrinterEdit({ ...printerEdit, status: 'ONLINE' })} className="accent-neutral-900" /> Online</label>
+                          <label className="flex items-center gap-1 text-xs"><input type="radio" name={`ps-${p.id}`} value="OFFLINE" checked={printerEdit.status === 'OFFLINE'} onChange={() => setPrinterEdit({ ...printerEdit, status: 'OFFLINE' })} className="accent-neutral-900" /> Offline</label>
+                        </div>
+                      </TableCell>
+                      <TableCell><Input value={printerEdit.notes} onChange={(e) => setPrinterEdit({ ...printerEdit, notes: e.target.value })} className="h-8 w-32" /></TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={handleSavePrinterEdit} className="text-xs">Save</Button>
+                          <Button variant="ghost" size="sm" onClick={cancelPrinterEdit} className="text-xs">Cancel</Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow key={p.id} className={p.status === 'OFFLINE' ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell>{p.brand}</TableCell>
+                      <TableCell>{p.model}</TableCell>
+                      <TableCell>{p.location}</TableCell>
+                      <TableCell>
+                        <Badge variant={(statusBadge[p.status] || 'default') as any}>{p.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-neutral-500 max-w-48 truncate">{p.notes || '—'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => startPrinterEdit(p)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeletePrinter(p.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

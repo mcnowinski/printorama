@@ -11,6 +11,7 @@ import Dashboard from './pages/manage/Dashboard'
 import ManageJobDetail from './pages/manage/JobDetail'
 import Users from './pages/manage/Users'
 import Settings from './pages/manage/Settings'
+import Profile from './pages/manage/Profile'
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, profile, loading } = useAuth()
@@ -54,6 +55,16 @@ function App() {
             <Route path="/manage/users" element={
               <ProtectedRoute adminOnly>
                 <Users />
+              </ProtectedRoute>
+            } />
+            <Route path="/manage/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/manage/profile/:id" element={
+              <ProtectedRoute adminOnly>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/manage/settings" element={

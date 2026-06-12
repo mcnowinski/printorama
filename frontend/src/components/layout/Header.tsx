@@ -22,7 +22,9 @@ export function Header() {
         <nav className="flex items-center gap-4">
           {user ? (
             <>
-              <span className="text-sm text-neutral-400">{profile?.name}</span>
+              <Link to="/manage/profile" className="text-sm text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                {profile?.name}
+              </Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 Sign Out
               </Button>
