@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table'
 import { Plus, Trash2, Loader2, Pencil, ArrowLeft } from 'lucide-react'
+import { Dialog } from '../../components/ui/dialog'
 
 const CATEGORIES = [
   { value: 'JOB_STATUS', label: 'Job Status' },
@@ -40,9 +41,11 @@ export default function Settings() {
   const [printers, setPrinters] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
   const [printerSaving, setPrinterSaving] = useState(false)
+  const [printerError, setPrinterError] = useState<string | null>(null)
   const [printerForm, setPrinterForm] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
   const [printerEditingId, setPrinterEditingId] = useState<string | null>(null)
   const [printerEdit, setPrinterEdit] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
+  const [deleteWarn, setDeleteWarn] = useState(false)
   const [printPage, setPrintPage] = useState(0)
   const [printPageSize, setPrintPageSize] = useState(20)
 
@@ -124,6 +127,7 @@ export default function Settings() {
 
   async function handleAddPrinter() {
     setPrinterSaving(true)
+    setPrinterError(null)
     const { error } = await supabase.from('printers').insert({
       name: printerForm.name,
       brand: printerForm.brand,
@@ -133,11 +137,12 @@ export default function Settings() {
       notes: printerForm.notes,
     })
     if (error) {
-      console.error('Printer insert failed:', error.message || error)
+      setPrinterError(error.message.includes('duplicate') ? 'A printer with this name already exists.' : error.message)
       setPrinterSaving(false)
       return
     }
     setShowForm(false)
+    setPrinterError(null)
     setPrinterForm({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
     setPrinterSaving(false)
     loadPrinters()
@@ -167,6 +172,11 @@ export default function Settings() {
   }
 
   async function handleDeletePrinter(id: string) {
+    const { data: jobs } = await supabase.from('jobs').select('id').eq('printer_id', id).limit(1)
+    if (jobs && jobs.length > 0) {
+      setDeleteWarn(true)
+      return
+    }
     if (!confirm('Delete this printer?')) return
     await supabase.from('printers').delete().eq('id', id)
     loadPrinters()
@@ -182,6 +192,7 @@ export default function Settings() {
   if (!settings) return <div className="py-12 text-center text-neutral-500">Loading...</div>
 
   return (
+    <>
     <div className="space-y-8">
       <div>
         <div className="flex items-center gap-3">
@@ -263,6 +274,7 @@ export default function Settings() {
                 </Button>
                 <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
               </div>
+              {printerError && <p className="text-sm text-red-600">{printerError}</p>}
             </div>
           )}
 
@@ -509,6 +521,11 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={deleteWarn} onClose={() => setDeleteWarn(false)} title="Cannot Delete Printer">
+        <p>This printer has active jobs assigned to it and cannot be deleted.</p>
+        <p className="mt-2">Mark it as <strong>Offline</strong> in the printer settings instead.</p>
+      </Dialog>
     </div>
+    </>
   )
 }

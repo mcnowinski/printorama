@@ -137,11 +137,9 @@ export default function ManageJobDetail() {
             <Label>Printer</Label>
             <Select value={printerId} onChange={(e) => setPrinterId(e.target.value)}>
               <option value="">Unassigned</option>
-              {printers.map((p) => (
-                <option key={p.id} value={p.id} className={p.status === 'OFFLINE' ? 'text-neutral-400' : ''}>
-                  {p.name}{p.status === 'OFFLINE' ? ' (offline)' : ''}
-                </option>
-              ))}
+                {printers.filter((p) => p.status === 'ONLINE').map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
             </Select>
           </div>
           <div className="space-y-2">
