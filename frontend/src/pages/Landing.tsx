@@ -32,7 +32,7 @@ export default function Landing() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Link to="/request">
-              <Button className="w-full">Submit Request</Button>
+              <Button className="w-full">Submit Job</Button>
             </Link>
           </CardContent>
         </Card>
@@ -43,7 +43,7 @@ export default function Landing() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Link to="/status">
-              <Button variant="outline" className="w-full">Check Status</Button>
+              <Button variant="outline" className="w-full">Check Job Status</Button>
             </Link>
           </CardContent>
         </Card>

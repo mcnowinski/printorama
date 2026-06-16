@@ -7,7 +7,8 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Select } from '../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
-import { Loader2, Upload, File, X } from 'lucide-react'
+import { Loader2, Upload, File, X, ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const MAX_FILE_SIZE_MB = 50
 
@@ -22,6 +23,7 @@ export default function Request() {
   const [fileError, setFileError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
+    title: '',
     studentName: '',
     studentEmail: '',
     studentNotes: '',
@@ -102,6 +104,7 @@ export default function Request() {
     const { error } = await supabase
       .from('job_queue')
       .insert({
+        title: form.title.trim(),
         student_name: form.studentName,
         student_email: form.studentEmail,
         student_notes: form.studentNotes || null,
@@ -157,7 +160,7 @@ export default function Request() {
             </p>
           )}
           <div className="flex gap-2">
-            <Button onClick={() => navigate('/status')}>Check Status</Button>
+            <Button onClick={() => navigate('/status')}>Check Job Status</Button>
             <Button variant="outline" onClick={() => navigate('/')}>Back to Home</Button>
           </div>
         </CardContent>
@@ -166,15 +169,28 @@ export default function Request() {
   }
 
   return (
-    <Card className="mx-auto max-w-lg">
-      <CardHeader>
-        <CardTitle>Submit a print job request</CardTitle>
-        <CardDescription>
-          Fill out the form below.
-        </CardDescription>
+    <div className="mx-auto max-w-lg space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <CardTitle>Submit Job</CardTitle>
+          </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Job Title <span className="text-red-500">*</span></Label>
+            <Input
+              id="title"
+              required
+              placeholder="Jane's Job"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Your Name <span className="text-red-500">*</span></Label>
             <Input
@@ -191,7 +207,7 @@ export default function Request() {
               id="email"
               type="email"
               required
-              placeholder="jane@vt.edu"
+              placeholder="jane@doe.com"
               value={form.studentEmail}
               onChange={(e) => setForm({ ...form, studentEmail: e.target.value })}
             />
@@ -237,7 +253,7 @@ export default function Request() {
             )}
           </div>
           <div className="space-y-2">
-            <Label>Largest dimension <span className="text-red-500">*</span></Label>
+            <Label>Max. Overall Dimension <span className="text-red-500">*</span></Label>
             <div className="flex gap-2">
               <Input
                 type="number"
@@ -254,23 +270,24 @@ export default function Request() {
                 <option value="in">in</option>
               </Select>
             </div>
-            <p className="text-xs text-neutral-400">Approximate largest dimension of your part. Helps the lab assign a suitable printer.</p>
+            <p className="text-xs text-neutral-400">Estimate the maximum overall dimension of your part.</p>
           </div>          
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
               id="notes"
-              placeholder="Any special instructions..."
+              placeholder="Provide any specific instructions..."
               value={form.studentNotes}
               onChange={(e) => setForm({ ...form, studentNotes: e.target.value })}
             />
           </div>         
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submit Job Request
+            Submit
           </Button>
         </form>
       </CardContent>
     </Card>
+    </div>
   )
 }

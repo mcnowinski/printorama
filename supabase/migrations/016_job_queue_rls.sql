@@ -19,6 +19,12 @@ CREATE POLICY "Staff update"
   ON job_queue FOR UPDATE
   USING (auth.role() = 'authenticated');
 
+-- Staff (authenticated) can DELETE (clean up after approve)
+DROP POLICY IF EXISTS "Staff delete" ON job_queue;
+CREATE POLICY "Staff delete"
+  ON job_queue FOR DELETE
+  USING (auth.role() = 'authenticated');
+
 -- Helper function for students to read their own queue items
 -- SECURITY DEFINER bypasses RLS on job_queue, but filter-locks to the provided email
 CREATE OR REPLACE FUNCTION get_my_queue_items(p_email TEXT)

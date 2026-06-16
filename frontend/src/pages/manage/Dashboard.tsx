@@ -52,8 +52,10 @@ export default function Dashboard() {
   const addFileInputRef = useRef<HTMLInputElement>(null)
   const [sortField, setSortField] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
   const [addForm, setAddForm] = useState({
-    studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
+    title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
   })
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export default function Dashboard() {
   }
 
   async function handleAddJob() {
-    if (!addForm.studentName.trim() || !addForm.studentEmail.trim()) return
+    if (!addForm.title.trim() || !addForm.studentName.trim() || !addForm.studentEmail.trim()) return
     setAdding(true)
 
     let fileUrl: string | null = null
@@ -92,6 +94,7 @@ export default function Dashboard() {
     }
 
     await supabase.from('jobs').insert({
+      title: addForm.title.trim(),
       student_name: addForm.studentName.trim(),
       student_email: addForm.studentEmail.trim(),
       student_notes: addForm.studentNotes.trim() || null,
@@ -102,7 +105,7 @@ export default function Dashboard() {
     setShowAddForm(false)
     setAddFile(null)
     setAddFileError(null)
-    setAddForm({ studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
+    setAddForm({ title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
     loadJobs()
   }
 
@@ -113,6 +116,7 @@ export default function Dashboard() {
       setSortField(field)
       setSortDir(field === 'created_at' ? 'desc' : 'asc')
     }
+    setPage(0)
   }
 
   const allItems = [
@@ -123,10 +127,11 @@ export default function Dashboard() {
   const filtered = allItems
     .filter((item) => {
       if (filter !== 'ALL') {
-        if (item._isQueue) return filter === 'PENDING_REVIEW'
+        if (item._isQueue) return filter === 'PENDING'
         if (item.status !== filter) return false
       }
-      if (search && !item.student_name.toLowerCase().includes(search.toLowerCase()) &&
+      if (search && !(item.title || '').toLowerCase().includes(search.toLowerCase()) &&
+          !item.student_name.toLowerCase().includes(search.toLowerCase()) &&
           !item.student_email.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
@@ -147,16 +152,19 @@ export default function Dashboard() {
       return sortDir === 'asc' ? cmp : -cmp
     })
 
-  const statuses = [...new Set(['PENDING_REVIEW', ...jobs.map((j) => j.status)])]
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages - 1)
+  const paginatedItems = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
+  const statuses = [...new Set(['PENDING', ...jobs.map((j) => j.status)])]
   const isAdmin = profile?.role === 'ADMINISTRATOR'
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-neutral-500">
+        {/* <p className="text-sm text-neutral-500">
           {isAdmin ? 'Administrator' : 'Manager'} — {profile?.name}
-        </p>
+        </p> */}
       </div>
 
       {isAdmin && (
@@ -178,17 +186,19 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Job List</h2>
           <div className="flex items-center gap-3">
-            <p className="text-sm text-neutral-500">{filtered.length} total{queue.length > 0 ? ` (${queue.length} pending)` : ''}</p>
-            <button onClick={() => setShowAddForm(!showAddForm)}
-              className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
-              <Plus className="h-4 w-4" /> Add Job
-            </button>
+            {/* <p className="text-sm text-neutral-500">{filtered.length} total{queue.length > 0 ? ` (${queue.length} pending)` : ''}</p> */}
+            <Button size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Job
+            </Button>
           </div>
         </div>
 
         {showAddForm && (
           <Card><CardContent className="pt-6">
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Title</Label>
+                <Input value={addForm.title} onChange={(e) => setAddForm({ ...addForm, title: e.target.value })} placeholder="My Job" />
+              </div>
               <div className="space-y-2"><Label>Status</Label>
                 <Select value={addForm.status} onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}>
                   {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
@@ -198,7 +208,7 @@ export default function Dashboard() {
                 <Input value={addForm.studentName} onChange={(e) => setAddForm({ ...addForm, studentName: e.target.value })} placeholder="Jane Doe" />
               </div>
               <div className="space-y-2"><Label>Student Email</Label>
-                <Input value={addForm.studentEmail} onChange={(e) => setAddForm({ ...addForm, studentEmail: e.target.value })} placeholder="jane@vt.edu" />
+                <Input value={addForm.studentEmail} onChange={(e) => setAddForm({ ...addForm, studentEmail: e.target.value })} placeholder="jane@doe.com" />
               </div>
               <div className="col-span-2 space-y-2"><Label>Notes</Label>
                 <Textarea value={addForm.studentNotes} onChange={(e) => setAddForm({ ...addForm, studentNotes: e.target.value })} placeholder="Any special instructions..." />
@@ -228,7 +238,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="mt-4 flex gap-2">
-              <Button onClick={handleAddJob} disabled={adding || !addForm.studentName || !addForm.studentEmail}>
+              <Button onClick={handleAddJob} disabled={adding || !addForm.title || !addForm.studentName || !addForm.studentEmail}>
                 {adding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Job
               </Button>
               <Button variant="ghost" onClick={() => setShowAddForm(false)}>Cancel</Button>
@@ -267,12 +277,12 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {paginatedItems.length === 0 ? (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
               ) : (
-                filtered.map((item) => (
+                paginatedItems.map((item) => (
                   <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
-                    <td className="px-4 py-3 font-medium">{item.student_name}</td>
+                    <td className="px-4 py-3 font-medium">{item.title || item.student_name}</td>
                     <td className="px-4 py-3 text-sm text-neutral-500">{formatDate(item.submitted_at || item.created_at)}</td>
                     <td className="px-4 py-3">
                       {item._isQueue ? (
@@ -295,6 +305,24 @@ export default function Dashboard() {
             </tbody>
           </table>
         </Card>
+
+        {filtered.length > pageSize && (
+          <div className="flex items-center justify-between text-sm text-neutral-500">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <Select value={String(pageSize)} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0) }} className="w-20 h-8 text-xs">
+                {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>{safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, filtered.length)} of {filtered.length}</span>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>Prev</Button>
+                <Button variant="ghost" size="sm" disabled={safePage >= totalPages - 1} onClick={() => setPage(safePage + 1)}>Next</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

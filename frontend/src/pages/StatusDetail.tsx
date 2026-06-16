@@ -51,7 +51,7 @@ export default function StatusDetail() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Job Details</CardTitle>
+            <CardTitle>{job.title || 'Job Details'}</CardTitle>
             <p className="text-sm text-neutral-500">Submitted by {job.student_name}</p>
           </div>
           <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
@@ -82,7 +82,7 @@ export default function StatusDetail() {
             )}
             {job.largest_dimension && (
               <div>
-                <p className="text-sm font-medium text-neutral-500">Largest Dimension</p>
+                <p className="text-sm font-medium text-neutral-500">Max. Overall Dimension</p>
                 <p>{job.largest_dimension} {job.dimension_unit || 'mm'}</p>
               </div>
             )}

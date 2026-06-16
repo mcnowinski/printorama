@@ -51,7 +51,13 @@ export default function ManageJobDetail() {
       .update({ status, printer_id: printerId || null, admin_notes: adminNotes || null })
       .eq('id', id)
 
-    if (!error && status !== oldStatus) {
+    if (error) {
+      console.error('Job update failed:', error)
+      setSaving(false)
+      return
+    }
+
+    if (status !== oldStatus) {
       await supabase.from('notifications').insert({
         job_id: id,
         recipient: job.student_email,
@@ -75,8 +81,8 @@ export default function ManageJobDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
-            <CardTitle>Job for {job.student_name}</CardTitle>
-            <p className="text-sm text-neutral-500">{job.student_email}</p>
+            <CardTitle>{job.title || 'Job'}</CardTitle>
+            <p className="text-sm text-neutral-500">{job.student_name} &lt;{job.student_email}&gt;</p>
           </div>
           {/* <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
             {job.status}
@@ -121,11 +127,11 @@ export default function ManageJobDetail() {
           </div>
           <div className="space-y-2">
             <Label>Status</Label>
-            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-              {statuses.map((s) => (
-                <option key={s.label} value={s.label}>{s.label}</option>
-              ))}
-            </Select>
+              <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+                {statuses.filter((s) => s.label !== 'PENDING').map((s) => (
+                  <option key={s.label} value={s.label}>{s.label}</option>
+                ))}
+              </Select>
           </div>
           <div className="space-y-2">
             <Label>Printer</Label>

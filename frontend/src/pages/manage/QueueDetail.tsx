@@ -5,7 +5,6 @@ import { Button } from '../../components/ui/button'
 import { Label } from '../../components/ui/label'
 import { Select } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 
 export default function QueueDetail() {
@@ -39,6 +38,7 @@ export default function QueueDetail() {
     const { error } = await supabase
       .from('jobs')
       .insert({
+        title: item.title || '',
         student_name: item.student_name,
         student_email: item.student_email,
         student_notes: item.student_notes,
@@ -52,9 +52,10 @@ export default function QueueDetail() {
       .select('id')
       .single()
 
-    if (error) { console.error(error); setSaving(false); return }
+    if (error) { console.error('Job insert failed:', error); setSaving(false); return }
 
-    await supabase.from('job_queue').delete().eq('id', id)
+    const { error: deleteError } = await supabase.from('job_queue').delete().eq('id', id)
+    if (deleteError) { console.error('Queue delete failed:', deleteError); setSaving(false); return }
     setSaving(false)
     navigate('/manage')
   }
@@ -73,16 +74,9 @@ export default function QueueDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
-            <CardTitle>{item.student_name}</CardTitle>
-            <p className="text-sm text-neutral-500">{item.student_email}</p>
+            <CardTitle>{item.title || item.student_name}</CardTitle>
+            <p className="text-sm text-neutral-500">{item.student_name} &lt;{item.student_email}&gt;</p>
           </div>
-          {isPending ? (
-            <span className="text-sm font-medium text-neutral-500">PENDING</span>
-          ) : item.status === 'APPROVED' ? (
-            <Badge variant="success">Approved</Badge>
-          ) : (
-            <Badge variant="destructive">REJECTED</Badge>
-          )}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -92,7 +86,7 @@ export default function QueueDetail() {
             </div>
             {item.largest_dimension && (
               <div>
-                <span className="font-medium text-neutral-500">Dimension:</span>{' '}
+                <span className="font-medium text-neutral-500">Max. Dimension:</span>{' '}
                 {item.largest_dimension} {item.dimension_unit || 'mm'}
               </div>
             )}
@@ -119,7 +113,7 @@ export default function QueueDetail() {
               <div className="space-y-1">
                 <Label className="text-xs">Status</Label>
                 <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-40">
-                  {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+                  {statusOptions.filter((s) => s.label !== 'PENDING').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
                 </Select>
               </div>
               <div className="space-y-1">

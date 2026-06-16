@@ -17,6 +17,10 @@ export default function Users() {
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'MANAGER' })
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [sortField, setSortField] = useState('created_at')
+  const [sortDir, setSortDir] = useState('desc')
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(20)
 
   useEffect(() => {
     loadUsers()
@@ -56,6 +60,29 @@ export default function Users() {
     loadUsers()
   }
 
+  function handleSort(field: string) {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir(field === 'created_at' ? 'desc' : 'asc')
+    }
+    setPage(0)
+  }
+
+  const sorted = [...users].sort((a, b) => {
+    let cmp = 0
+    if (sortField === 'name') cmp = a.name.localeCompare(b.name)
+    else if (sortField === 'email') cmp = a.email.localeCompare(b.email)
+    else if (sortField === 'role') cmp = a.role.localeCompare(b.role)
+    else cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    return sortDir === 'asc' ? cmp : -cmp
+  })
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const safePage = Math.min(page, totalPages - 1)
+  const paginatedUsers = sorted.slice(safePage * pageSize, (safePage + 1) * pageSize)
+
   const isLastAdmin = (userId: string) => {
     return adminCount <= 1 && users.find((u) => u.id === userId)?.role === 'ADMINISTRATOR'
   }
@@ -84,7 +111,7 @@ export default function Users() {
         </div>
         {!showCreate && (
           <Button onClick={() => setShowCreate(true)}>
-            <UserPlus className="mr-2 h-4 w-4" /> Create User
+            <UserPlus className="mr-2 h-4 w-4" /> Add User
           </Button>
         )}
       </div>
@@ -92,7 +119,7 @@ export default function Users() {
       {showCreate && (
         <Card>
           <CardHeader>
-            <CardTitle>Create User</CardTitle>
+            <CardTitle>Add User</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
@@ -133,9 +160,15 @@ export default function Users() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead className="cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('name')}>
+                Name{sortField === 'name' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+              </TableHead>
+              <TableHead className="cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('email')}>
+                Email{sortField === 'email' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+              </TableHead>
+              <TableHead className="cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('role')}>
+                Role{sortField === 'role' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+              </TableHead>
               <TableHead className="w-24"></TableHead>
             </TableRow>
           </TableHeader>
@@ -144,8 +177,7 @@ export default function Users() {
               <TableRow><TableCell colSpan={4} className="text-center py-8">Loading...</TableCell></TableRow>
             ) : users.length === 0 ? (
               <TableRow><TableCell colSpan={4} className="text-center py-8 text-neutral-500">No users yet.</TableCell></TableRow>
-            ) : (
-              users.map((u) => (
+            ) : paginatedUsers.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell>{u.email}</TableCell>
@@ -162,12 +194,29 @@ export default function Users() {
                       </Button>
                     </div>
                   </TableCell>
-                    </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+
+        {users.length > pageSize && (
+          <div className="flex items-center justify-between text-sm text-neutral-500">
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <Select value={String(pageSize)} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0) }} className="w-20 h-8 text-xs">
+                {[10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <span>{safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, users.length)} of {users.length}</span>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>Prev</Button>
+                <Button variant="ghost" size="sm" disabled={safePage >= totalPages - 1} onClick={() => setPage(safePage + 1)}>Next</Button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   )
 }

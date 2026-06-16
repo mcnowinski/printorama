@@ -34,6 +34,8 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editSort, setEditSort] = useState(0)
+  const [optPage, setOptPage] = useState(0)
+  const [optPageSize, setOptPageSize] = useState(20)
 
   const [printers, setPrinters] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -41,6 +43,8 @@ export default function Settings() {
   const [printerForm, setPrinterForm] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
   const [printerEditingId, setPrinterEditingId] = useState<string | null>(null)
   const [printerEdit, setPrinterEdit] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
+  const [printPage, setPrintPage] = useState(0)
+  const [printPageSize, setPrintPageSize] = useState(20)
 
   useEffect(() => {
     supabase.from('system_settings').select('*').limit(1).single().then(({ data }) => {
@@ -61,6 +65,7 @@ export default function Settings() {
       .order('sort_order')
 
     setOptions(data || [])
+    setOptPage(0)
   }
 
   async function loadPrinters() {
@@ -167,6 +172,13 @@ export default function Settings() {
     loadPrinters()
   }
 
+  const optTotalPages = Math.max(1, Math.ceil(options.length / optPageSize))
+  const safeOptPage = Math.min(optPage, optTotalPages - 1)
+  const paginatedOptions = options.slice(safeOptPage * optPageSize, (safeOptPage + 1) * optPageSize)
+  const printTotalPages = Math.max(1, Math.ceil(printers.length / printPageSize))
+  const safePrintPage = Math.min(printPage, printTotalPages - 1)
+  const paginatedPrinters = printers.slice(safePrintPage * printPageSize, (safePrintPage + 1) * printPageSize)
+
   if (!settings) return <div className="py-12 text-center text-neutral-500">Loading...</div>
 
   return (
@@ -183,13 +195,17 @@ export default function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Printers</CardTitle>
-          <CardDescription>Manage the printers.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Printers</CardTitle>
+              <CardDescription>Manage the printers.</CardDescription>
+            </div>
+            <Button onClick={() => setShowForm(!showForm)} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Add Printer
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={() => setShowForm(!showForm)} size="sm">
-            <Plus className="mr-2 h-4 w-4" /> Add Printer
-          </Button>
 
           {showForm && (
             <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
@@ -266,7 +282,7 @@ export default function Settings() {
               {printers.length === 0 ? (
                 <TableRow><TableCell colSpan={7} className="py-8 text-center text-neutral-500">No printers yet.</TableCell></TableRow>
               ) : (
-                printers.map((p) => (
+                paginatedPrinters.map((p) => (
                   printerEditingId === p.id ? (
                     <TableRow key={p.id}>
                       <TableCell><Input value={printerEdit.name} onChange={(e) => setPrinterEdit({ ...printerEdit, name: e.target.value })} className="h-8 w-32" /></TableCell>
@@ -313,6 +329,24 @@ export default function Settings() {
               )}
             </TableBody>
           </Table>
+
+          {printers.length > printPageSize && (
+            <div className="flex items-center justify-between text-sm text-neutral-500 pt-4">
+              <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <Select value={String(printPageSize)} onChange={(e) => { setPrintPageSize(Number(e.target.value)); setPrintPage(0) }} className="w-20 h-8 text-xs">
+                  {[10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>{safePrintPage * printPageSize + 1}–{Math.min((safePrintPage + 1) * printPageSize, printers.length)} of {printers.length}</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" disabled={safePrintPage === 0} onClick={() => setPrintPage(safePrintPage - 1)}>Prev</Button>
+                  <Button variant="ghost" size="sm" disabled={safePrintPage >= printTotalPages - 1} onClick={() => setPrintPage(safePrintPage + 1)}>Next</Button>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -395,7 +429,7 @@ export default function Settings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {options.map((o) => (
+              {paginatedOptions.map((o) => (
                 <TableRow key={o.id}>
                   {editingId === o.id ? (
                     <>
@@ -441,6 +475,24 @@ export default function Settings() {
               ))}
             </TableBody>
           </Table>
+
+          {options.length > optPageSize && (
+            <div className="flex items-center justify-between text-sm text-neutral-500">
+              <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <Select value={String(optPageSize)} onChange={(e) => { setOptPageSize(Number(e.target.value)); setOptPage(0) }} className="w-20 h-8 text-xs">
+                  {[10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+                </Select>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>{safeOptPage * optPageSize + 1}–{Math.min((safeOptPage + 1) * optPageSize, options.length)} of {options.length}</span>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" disabled={safeOptPage === 0} onClick={() => setOptPage(safeOptPage - 1)}>Prev</Button>
+                  <Button variant="ghost" size="sm" disabled={safeOptPage >= optTotalPages - 1} onClick={() => setOptPage(safeOptPage + 1)}>Next</Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <Input
