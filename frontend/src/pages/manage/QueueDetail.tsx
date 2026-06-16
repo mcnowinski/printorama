@@ -35,7 +35,7 @@ export default function QueueDetail() {
   async function handleApprove() {
     if (!id || !item) return
     setSaving(true)
-    const { error } = await supabase
+    const { data: newJob, error } = await supabase
       .from('jobs')
       .insert({
         title: item.title || '',
@@ -53,6 +53,13 @@ export default function QueueDetail() {
       .single()
 
     if (error) { console.error('Job insert failed:', error); setSaving(false); return }
+
+    await supabase.from('job_history').insert({
+      job_id: newJob.id,
+      field: 'status',
+      old_value: 'PENDING',
+      new_value: approveStatus,
+    })
 
     const { error: deleteError } = await supabase.from('job_queue').delete().eq('id', id)
     if (deleteError) { console.error('Queue delete failed:', deleteError); setSaving(false); return }

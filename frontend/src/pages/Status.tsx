@@ -6,8 +6,8 @@ import { Select } from '../components/ui/select'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { Search, Loader2, ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Search, Loader2, ArrowLeft, Clock } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 
 function fmt(d: string) {
   const date = new Date(d)
@@ -32,6 +32,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warnin
 }
 
 export default function Status() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [items, setItems] = useState<any[]>([])
   const [searched, setSearched] = useState(false)
@@ -135,12 +136,13 @@ export default function Status() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-neutral-800 text-left">
-                  {['title', 'created_at', 'modified', 'status'].map((field) => (
-                    <th key={field} className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort(field)}>
-                      {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : 'Status'}
-                      {sortField === field && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                    </th>
-                  ))}
+                {['title', 'created_at', 'modified', 'status'].map((field) => (
+                  <th key={field} className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort(field)}>
+                    {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : 'Status'}
+                    {sortField === field && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                ))}
+                <th className="h-12 px-4 font-medium text-neutral-500"></th>
                 </tr>
               </thead>
               <tbody>
@@ -151,6 +153,11 @@ export default function Status() {
                     <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.updated_at || item.created_at)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/status/${item.id}?email=${encodeURIComponent(email)}`)}>
+                        <Clock className="h-4 w-4" />
+                      </Button>
                     </td>
                   </tr>
                 ))}

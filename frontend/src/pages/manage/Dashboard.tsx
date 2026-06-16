@@ -9,7 +9,7 @@ import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { Card, CardContent } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
-import { Search, Settings, Users, Plus, Loader2, Upload, File, X, Pencil } from 'lucide-react'
+import { Search, Settings, Users, Plus, Loader2, Upload, File, X, Pencil, Clock } from 'lucide-react'
 
 const MAX_FILE_SIZE_MB = 50
 
@@ -93,14 +93,24 @@ export default function Dashboard() {
       fileUrl = urlData.publicUrl
     }
 
-    await supabase.from('jobs').insert({
+    const { data: newJob } = await supabase.from('jobs').insert({
       title: addForm.title.trim(),
       student_name: addForm.studentName.trim(),
       student_email: addForm.studentEmail.trim(),
       student_notes: addForm.studentNotes.trim() || null,
       status: addForm.status,
+      submitted_at: new Date().toISOString(),
       file_url: fileUrl,
-    })
+    }).select('id').single()
+
+    if (newJob) {
+      await supabase.from('job_history').insert({
+        job_id: newJob.id,
+        field: 'status',
+        old_value: null,
+        new_value: addForm.status,
+      })
+    }
     setAdding(false)
     setShowAddForm(false)
     setAddFile(null)
@@ -295,9 +305,16 @@ export default function Dashboard() {
                       {item.printers?.name || '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(item._isQueue ? `/manage/queue/${item.id}` : `/manage/jobs/${item.id}`)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" title="Edit job" onClick={() => navigate(item._isQueue ? `/manage/queue/${item.id}` : `/manage/jobs/${item.id}`)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {!item._isQueue && (
+                          <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/manage/jobs/${item.id}/history`)}>
+                            <Clock className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

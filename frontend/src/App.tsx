@@ -13,6 +13,7 @@ import Users from './pages/manage/Users'
 import Settings from './pages/manage/Settings'
 import Profile from './pages/manage/Profile'
 import QueueDetail from './pages/manage/QueueDetail'
+import JobHistory from './pages/manage/JobHistory'
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user, profile, loading } = useAuth()
@@ -56,6 +57,11 @@ function App() {
             <Route path="/manage/jobs/:id" element={
               <ProtectedRoute>
                 <ManageJobDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/manage/jobs/:id/history" element={
+              <ProtectedRoute>
+                <JobHistory />
               </ProtectedRoute>
             } />
             <Route path="/manage/users" element={

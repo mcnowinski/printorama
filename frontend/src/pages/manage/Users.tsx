@@ -186,10 +186,10 @@ export default function Users() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => navigate(`/manage/profile/${u.id}`)}>
+                      <Button variant="ghost" size="sm" title="Edit user" onClick={() => navigate(`/manage/profile/${u.id}`)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} disabled={isLastAdmin(u.id)} title={isLastAdmin(u.id) ? 'Cannot remove the last administrator' : 'Remove user'}>
+                      <Button variant="ghost" size="sm" title="Delete user" onClick={() => handleDelete(u.id)} disabled={isLastAdmin(u.id)}>
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>

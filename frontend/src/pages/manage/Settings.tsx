@@ -473,10 +473,10 @@ export default function Settings() {
                       <TableCell>{o.sort_order}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => startEdit(o.id, o.label, o.sort_order)}>
+                          <Button variant="ghost" size="sm" title="Edit option" onClick={() => startEdit(o.id, o.label, o.sort_order)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(o.id)}>
+                          <Button variant="ghost" size="sm" title="Delete option" onClick={() => handleDelete(o.id)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>

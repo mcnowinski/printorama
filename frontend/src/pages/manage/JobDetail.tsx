@@ -46,6 +46,8 @@ export default function ManageJobDetail() {
     setSaving(true)
 
     const oldStatus = job.status
+    const oldPrinterId = job.printer_id
+    const oldNotes = job.admin_notes || ''
     const { error } = await supabase
       .from('jobs')
       .update({ status, printer_id: printerId || null, admin_notes: adminNotes || null })
@@ -57,13 +59,31 @@ export default function ManageJobDetail() {
       return
     }
 
+    const historyInserts: any[] = []
+
     if (status !== oldStatus) {
+      historyInserts.push({ job_id: id, field: 'status', old_value: oldStatus, new_value: status })
       await supabase.from('notifications').insert({
         job_id: id,
         recipient: job.student_email,
         type: 'STATUS_CHANGE',
         message: `Print job from ${job.student_name} status changed from ${oldStatus} to ${status}.`,
       })
+    }
+
+    if (String(printerId) !== String(oldPrinterId || '')) {
+      const oldName = printers.find((p) => p.id === oldPrinterId)?.name || oldPrinterId
+      const newName = printers.find((p) => p.id === printerId)?.name || printerId
+      historyInserts.push({ job_id: id, field: 'printer', old_value: oldName || 'Unassigned', new_value: newName || 'Unassigned' })
+    }
+
+    if ((adminNotes || '') !== oldNotes) {
+      historyInserts.push({ job_id: id, field: 'notes', old_value: oldNotes || null, new_value: adminNotes || null })
+    }
+
+    if (historyInserts.length > 0) {
+      const { error: histError } = await supabase.from('job_history').insert(historyInserts)
+      if (histError) console.error('History insert failed:', histError)
     }
 
     setSaving(false)
