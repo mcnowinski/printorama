@@ -72,11 +72,15 @@ export default function JobHistory() {
                   </div>
                   <div className="flex-1 pt-0.5">
                     <p className="text-sm">
-                      <span className="font-medium">{fieldLabels[h.field] || h.field}</span>
-                      {' changed from '}
-                      <span className="text-neutral-500">{h.old_value || '(empty)'}</span>
-                      {' to '}
-                      <span className="text-neutral-500">{h.new_value || '(empty)'}</span>
+                      {h.field === 'notes' && h.new_value === null ? (
+                        <>Notes deleted: <span className="text-neutral-500">{h.old_value}</span></>
+                      ) : (
+                        <><span className="font-medium">{fieldLabels[h.field] || h.field}</span>
+                        {' changed from '}
+                        <span className="text-neutral-500">{h.old_value || '(empty)'}</span>
+                        {' to '}
+                        <span className="text-neutral-500">{h.new_value || '(empty)'}</span></>
+                      )}
                     </p>
                     <p className="text-xs text-neutral-400">{fmt(h.created_at)}</p>
                   </div>

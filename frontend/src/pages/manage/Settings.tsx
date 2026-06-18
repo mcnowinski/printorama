@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/table'
 import { Plus, Trash2, Loader2, Pencil, ArrowLeft } from 'lucide-react'
-import { Dialog } from '../../components/ui/dialog'
+import { Dialog, ConfirmDialog } from '../../components/ui/dialog'
 
 const CATEGORIES = [
   { value: 'JOB_STATUS', label: 'Job Status' },
@@ -46,6 +46,8 @@ export default function Settings() {
   const [printerEditingId, setPrinterEditingId] = useState<string | null>(null)
   const [printerEdit, setPrinterEdit] = useState({ name: '', brand: '', model: '', location: '', status: 'ONLINE', notes: '' })
   const [deleteWarn, setDeleteWarn] = useState(false)
+  const [confirmOptId, setConfirmOptId] = useState<string | null>(null)
+  const [confirmPrinterId, setConfirmPrinterId] = useState<string | null>(null)
   const [printPage, setPrintPage] = useState(0)
   const [printPageSize, setPrintPageSize] = useState(20)
 
@@ -101,9 +103,7 @@ export default function Settings() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this option?')) return
-    await supabase.from('dropdown_options').delete().eq('id', id)
-    loadOptions()
+    setConfirmOptId(id)
   }
 
   function startEdit(id: string, label: string, sortOrder: number) {
@@ -177,9 +177,7 @@ export default function Settings() {
       setDeleteWarn(true)
       return
     }
-    if (!confirm('Delete this printer?')) return
-    await supabase.from('printers').delete().eq('id', id)
-    loadPrinters()
+    setConfirmPrinterId(id)
   }
 
   const optTotalPages = Math.max(1, Math.ceil(options.length / optPageSize))
@@ -525,6 +523,24 @@ export default function Settings() {
         <p>This printer has active jobs assigned to it and cannot be deleted.</p>
         <p className="mt-2">Mark it as <strong>Offline</strong> in the printer settings instead.</p>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmOptId !== null}
+        onClose={() => setConfirmOptId(null)}
+        onConfirm={async () => { if (confirmOptId) { await supabase.from('dropdown_options').delete().eq('id', confirmOptId); loadOptions() } }}
+        title="Delete Option"
+        message="Are you sure you want to delete this option?"
+        confirmLabel="Delete"
+      />
+
+      <ConfirmDialog
+        open={confirmPrinterId !== null}
+        onClose={() => setConfirmPrinterId(null)}
+        onConfirm={async () => { if (confirmPrinterId) { await supabase.from('printers').delete().eq('id', confirmPrinterId); loadPrinters() } }}
+        title="Delete Printer"
+        message="Are you sure you want to delete this printer?"
+        confirmLabel="Delete"
+      />
     </div>
     </>
   )

@@ -182,17 +182,7 @@ export default function Request() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Job Title <span className="text-red-500">*</span></Label>
-            <Input
-              id="title"
-              required
-              placeholder="Jane's Job"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Your Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               required
@@ -202,7 +192,7 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Your Email <span className="text-red-500">*</span></Label>
+            <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
             <Input
               id="email"
               type="email"
@@ -210,6 +200,16 @@ export default function Request() {
               placeholder="jane@doe.com"
               value={form.studentEmail}
               onChange={(e) => setForm({ ...form, studentEmail: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="title">Job Name <span className="text-red-500">*</span></Label>
+            <Input
+              id="title"
+              required
+              placeholder="Jane's Job"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -248,6 +248,7 @@ export default function Request() {
               className="hidden"
               onChange={(e) => handleFileSelect(e.target.files)}
             />
+            <p className="text-xs text-neutral-400">Uploads are limited to 1 file per job request.</p>
             {fileError && (
               <p className="text-sm text-red-600">{fileError}</p>
             )}

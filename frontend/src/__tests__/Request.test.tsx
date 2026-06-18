@@ -15,9 +15,9 @@ describe('Job Submit page', () => {
   it('renders the submission form', () => {
     renderRequest()
     expect(screen.getByText('Submit Job')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Job Title/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Your Name/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Your Email/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Job Name/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Name /)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Email /)).toBeInTheDocument()
   })
 
   it('renders a submit button', () => {

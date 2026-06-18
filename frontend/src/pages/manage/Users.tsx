@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge'
 import { Select } from '../../components/ui/select'
 import { UserPlus, Loader2, Pencil, Trash2, ArrowLeft, Copy, Sparkles } from 'lucide-react'
+import { ConfirmDialog } from '../../components/ui/dialog'
 
 export default function Users() {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ export default function Users() {
   const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'MANAGER' })
   const [creating, setCreating] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [confirmDel, setConfirmDel] = useState<{ show: boolean; id: string }>({ show: false, id: '' })
   const [sortField, setSortField] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
@@ -55,9 +57,7 @@ export default function Users() {
       alert('Cannot remove the last administrator. Promote another user to admin first.')
       return
     }
-    if (!confirm('Remove this user?')) return
-    await supabase.from('users').delete().eq('id', userId)
-    loadUsers()
+    setConfirmDel({ show: true, id: userId })
   }
 
   function handleSort(field: string) {
@@ -217,6 +217,15 @@ export default function Users() {
             </div>
           </div>
         )}
+
+      <ConfirmDialog
+        open={confirmDel.show}
+        onClose={() => setConfirmDel({ show: false, id: '' })}
+        onConfirm={async () => { await supabase.from('users').delete().eq('id', confirmDel.id); loadUsers() }}
+        title="Remove User"
+        message="Are you sure you want to remove this user? This action cannot be undone."
+        confirmLabel="Remove"
+      />
     </div>
   )
 }

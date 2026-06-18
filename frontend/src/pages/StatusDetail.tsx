@@ -38,6 +38,7 @@ export default function StatusDetail() {
   const email = searchParams.get('email') || ''
   const [job, setJob] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
+  const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,6 +56,8 @@ export default function StatusDetail() {
 
       const { data: h } = await supabase.rpc('get_my_job_history', { p_email: email })
       if (h) setHistory(h.filter((entry: any) => entry.job_id === id))
+      const { data: n } = await supabase.rpc('get_my_job_notes', { p_email: email })
+      if (n) setNotes(n.filter((note: any) => note.job_id === id))
 
       setLoading(false)
     }
@@ -115,10 +118,15 @@ export default function StatusDetail() {
               </div>
             )}
           </div>
-          {job.admin_notes && (
-            <div className="border-t pt-3">
+          {notes.length > 0 && (
+            <div className="border-t pt-3 space-y-2">
               <p className="text-sm font-medium text-neutral-500">Notes</p>
-              <p className="mt-1 text-sm text-neutral-600">{job.admin_notes}</p>
+              {notes.map((n) => (
+                <div key={n.id} className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+                  <p className="text-sm">{n.content}</p>
+                  <p className="mt-1 text-xs text-neutral-400">{fmt(n.created_at)}</p>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -137,11 +145,15 @@ export default function StatusDetail() {
                   </div>
                   <div className="flex-1 pt-0.5">
                     <p className="text-sm">
-                      <span className="font-medium">{fieldLabels[h.field] || h.field}</span>
-                      {' changed from '}
-                      <span className="text-neutral-500">{h.old_value || '(empty)'}</span>
-                      {' to '}
-                      <span className="text-neutral-500">{h.new_value || '(empty)'}</span>
+                      {h.field === 'notes' && h.new_value === null ? (
+                        <>Notes deleted: <span className="text-neutral-500">{h.old_value}</span></>
+                      ) : (
+                        <><span className="font-medium">{fieldLabels[h.field] || h.field}</span>
+                        {' changed from '}
+                        <span className="text-neutral-500">{h.old_value || '(empty)'}</span>
+                        {' to '}
+                        <span className="text-neutral-500">{h.new_value || '(empty)'}</span></>
+                      )}
                     </p>
                     <p className="text-xs text-neutral-400">{fmt(h.created_at)}</p>
                   </div>
