@@ -124,7 +124,7 @@ export default function QueueDetail() {
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Printer</Label>
+                <Label className="text-xs">Tool</Label>
                 <Select value={approvePrinter} onChange={(e) => setApprovePrinter(e.target.value)} className="w-48">
                   <option value="">Unassigned</option>
                   {printers.filter((p) => p.status === 'ONLINE').map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

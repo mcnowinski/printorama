@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -9,11 +9,8 @@ import { Loader2 } from 'lucide-react'
 
 export default function Login() {
   const { signIn, user } = useAuth()
-  const navigate = useNavigate()
 
-  useEffect(() => {
-    if (user) navigate('/manage', { replace: true })
-  }, [user, navigate])
+  if (user) return <Navigate to="/manage" replace />
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

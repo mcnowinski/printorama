@@ -206,11 +206,11 @@ export default function Settings() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Printers</CardTitle>
-              <CardDescription>Manage the printers.</CardDescription>
+              <CardTitle>Tools</CardTitle>
+              <CardDescription>Manage the tools.</CardDescription>
             </div>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
-              <Plus className="mr-2 h-4 w-4" /> Add Printer
+              <Plus className="mr-2 h-4 w-4" /> Add Tool
             </Button>
           </div>
         </CardHeader>
@@ -219,7 +219,7 @@ export default function Settings() {
           {showForm && (
             <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
               <div className="space-y-2">
-                <Label>Printer Name</Label>
+                <Label>Tool Name</Label>
                 <Input value={printerForm.name} onChange={(e) => setPrinterForm({ ...printerForm, name: e.target.value })} placeholder="Prusa MK4 #1" />
               </div>
               <div className="space-y-2">
@@ -268,7 +268,7 @@ export default function Settings() {
               <div className="flex items-end gap-2">
                 <Button onClick={handleAddPrinter} disabled={printerSaving || !printerForm.name}>
                   {printerSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Add Printer
+Add Tool
                 </Button>
                 <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
               </div>
@@ -290,7 +290,7 @@ export default function Settings() {
             </TableHeader>
             <TableBody>
               {printers.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="py-8 text-center text-neutral-500">No printers yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="py-8 text-center text-neutral-500">No tools yet.</TableCell></TableRow>
               ) : (
                 paginatedPrinters.map((p) => (
                   printerEditingId === p.id ? (
@@ -519,9 +519,9 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-      <Dialog open={deleteWarn} onClose={() => setDeleteWarn(false)} title="Cannot Delete Printer">
-        <p>This printer has active jobs assigned to it and cannot be deleted.</p>
-        <p className="mt-2">Mark it as <strong>Offline</strong> in the printer settings instead.</p>
+      <Dialog open={deleteWarn} onClose={() => setDeleteWarn(false)} title="Cannot Delete Tool">
+        <p>This tool has active jobs assigned to it and cannot be deleted.</p>
+        <p className="mt-2">Mark it as <strong>Offline</strong> in the tool settings instead.</p>
       </Dialog>
 
       <ConfirmDialog
@@ -537,8 +537,8 @@ export default function Settings() {
         open={confirmPrinterId !== null}
         onClose={() => setConfirmPrinterId(null)}
         onConfirm={async () => { if (confirmPrinterId) { await supabase.from('printers').delete().eq('id', confirmPrinterId); loadPrinters() } }}
-        title="Delete Printer"
-        message="Are you sure you want to delete this printer?"
+        title="Delete Tool"
+        message="Are you sure you want to delete this tool?"
         confirmLabel="Delete"
       />
     </div>

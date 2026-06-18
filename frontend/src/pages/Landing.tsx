@@ -18,7 +18,7 @@ export default function Landing() {
     <div className="flex flex-col items-center gap-12 py-12">
       <div className="text-center">
         <h1 className="text-5xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-          Print-O-Rama
+          Fab-O-Rama
         </h1>
         <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-400">
           Ut Prosim Solidus

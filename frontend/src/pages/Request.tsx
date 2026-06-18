@@ -19,6 +19,7 @@ export default function Request() {
   const [submitted, setSubmitted] = useState(false)
   const [requestsOpen, setRequestsOpen] = useState(true)
   const [acceptedExtensions, setAcceptedExtensions] = useState<string[]>([])
+  const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
 
@@ -29,6 +30,7 @@ export default function Request() {
     studentNotes: '',
     largestDimension: '',
     dimensionUnit: 'mm',
+    jobType: '',
   })
 
   useEffect(() => {
@@ -38,6 +40,9 @@ export default function Request() {
 
     supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
       setAcceptedExtensions((data || []).map((d: any) => d.label))
+    })
+    supabase.from('dropdown_options').select('label').eq('category', 'JOB_TYPE').order('sort_order').then(({ data }) => {
+      setJobTypes(data || [])
     })
   }, [])
 
@@ -112,6 +117,7 @@ export default function Request() {
         original_filename: file ? file.name : null,
         largest_dimension: form.largestDimension ? parseFloat(form.largestDimension) : null,
         dimension_unit: form.dimensionUnit,
+        job_type: form.jobType || null,
         status: 'PENDING',
       })
 
@@ -213,6 +219,13 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
+            <Label>Job Type</Label>
+            <Select value={form.jobType} onChange={(e) => setForm({ ...form, jobType: e.target.value })}>
+              <option value="">Select job type...</option>
+              {jobTypes.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>File <span className="text-red-500">*</span></Label>
             <div
               className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 p-6 text-sm text-neutral-500 hover:border-neutral-400 dark:border-neutral-700 dark:hover:border-neutral-500"
@@ -272,7 +285,7 @@ export default function Request() {
               </Select>
             </div>
             <p className="text-xs text-neutral-400">Estimate the maximum overall dimension of your part.</p>
-          </div>          
+          </div>      
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea

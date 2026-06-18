@@ -18,7 +18,7 @@ function fmt(d: string) {
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
   PENDING: 'warning',
-  PRINTING: 'info',
+  FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',
@@ -174,7 +174,7 @@ export default function ManageJobDetail() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Printer</Label>
+            <Label>Tool</Label>
             <Select value={printerId} onChange={(e) => setPrinterId(e.target.value)}>
               <option value="">Unassigned</option>
               {printers.filter((p) => p.status === 'ONLINE').map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

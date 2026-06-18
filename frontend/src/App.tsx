@@ -21,13 +21,13 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
 
   useEffect(() => {
     if (loading) return
-    if (!user || !profile) navigate('/login', { replace: true })
-    else if (adminOnly && profile.role !== 'ADMINISTRATOR') navigate('/manage', { replace: true })
+    if (!user) navigate('/login', { replace: true })
+    else if (adminOnly && profile && profile.role !== 'ADMINISTRATOR') navigate('/manage', { replace: true })
   }, [user, profile, loading, adminOnly, navigate])
 
-  if (loading || (!profile && user)) return <div className="py-24 text-center text-neutral-500">Loading...</div>
-  if (!user || !profile) return null
-  if (adminOnly && profile.role !== 'ADMINISTRATOR') return null
+  if (loading) return <div className="py-24 text-center"><div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-neutral-300 border-t-neutral-900" /></div>
+  if (!user) return null
+  if (adminOnly && (!profile || profile.role !== 'ADMINISTRATOR')) return <div className="py-24 text-center"><div className="mx-auto h-6 w-6 animate-spin rounded-full border-4 border-neutral-300 border-t-neutral-900" /></div>
 
   return <>{children}</>
 }

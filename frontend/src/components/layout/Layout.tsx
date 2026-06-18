@@ -9,7 +9,7 @@ export function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-neutral-200 py-4 text-center text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-        Print-O-Rama &mdash; Ut Prosim Solidus
+        Fab-O-Rama &mdash; Ut Prosim Solidus
       </footer>
     </div>
   )

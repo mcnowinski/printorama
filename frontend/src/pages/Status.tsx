@@ -25,7 +25,7 @@ function fmt(d: string) {
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
   PENDING: 'warning',
-  PRINTING: 'info',
+  FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',

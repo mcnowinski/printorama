@@ -20,7 +20,7 @@ function fmt(d: string) {
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
   PENDING: 'warning',
-  PRINTING: 'info',
+  FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',
@@ -28,7 +28,7 @@ const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warnin
 
 const fieldLabels: Record<string, string> = {
   status: 'Status',
-  printer: 'Printer',
+  printer: 'Tool',
   notes: 'Notes',
 }
 
@@ -102,7 +102,7 @@ export default function StatusDetail() {
             </div>
             {job.printers?.name && (
               <div>
-                <span className="font-medium text-neutral-500">Printer:</span> {job.printers.name}
+                <span className="font-medium text-neutral-500">Tool:</span> {job.printers.name}
               </div>
             )}
             {job.largest_dimension && (

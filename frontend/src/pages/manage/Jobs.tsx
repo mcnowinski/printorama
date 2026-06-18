@@ -11,7 +11,7 @@ import { Search } from 'lucide-react'
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
   PENDING: 'warning',
-  PRINTING: 'info',
+  FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',
@@ -82,7 +82,7 @@ export default function ManageJobs() {
               <TableHead>Title</TableHead>
               <TableHead>Student</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Printer</TableHead>
+              <TableHead>Tool</TableHead>
               <TableHead>Date</TableHead>
             </TableRow>
           </TableHeader>

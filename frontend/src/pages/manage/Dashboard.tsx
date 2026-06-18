@@ -29,7 +29,7 @@ function formatDate(d: string) {
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   RECEIVED: 'secondary',
   PENDING: 'warning',
-  PRINTING: 'info',
+  FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
   CANCELLED: 'default',
@@ -187,7 +187,7 @@ export default function Dashboard() {
           <button onClick={() => navigate('/manage/settings')}
             className="flex items-center gap-3 rounded-lg border border-neutral-200 p-4 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900">
             <Settings className="h-5 w-5 text-neutral-500" />
-            <div><p className="font-medium text-sm">Settings</p><p className="text-xs text-neutral-500">Printers, system config, dropdown lists</p></div>
+            <div><p className="font-medium text-sm">Settings</p><p className="text-xs text-neutral-500">Tools, system config, dropdown lists</p></div>
           </button>
         </div>
       )}

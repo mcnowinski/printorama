@@ -7,7 +7,7 @@
 INSERT INTO dropdown_options (category, label, sort_order) VALUES
   ('JOB_STATUS', 'RECEIVED', 1),
   ('JOB_STATUS', 'PENDING', 2),
-  ('JOB_STATUS', 'PRINTING', 3),
+  ('JOB_STATUS', 'FABRICATING', 3),
   ('JOB_STATUS', 'COMPLETE', 4),
   ('JOB_STATUS', 'FAILED', 5),
   ('JOB_STATUS', 'CANCELLED', 6)
@@ -47,6 +47,16 @@ INSERT INTO dropdown_options (category, label, sort_order) VALUES
   ('FILAMENT_COLOR', 'Gray', 6),
   ('FILAMENT_COLOR', 'Orange', 7),
   ('FILAMENT_COLOR', 'Clear', 8)
+ON CONFLICT (category, label) DO NOTHING;
+
+-- ============================================================
+-- DROPDOWN OPTIONS: Job Types
+-- ============================================================
+INSERT INTO dropdown_options (category, label, sort_order) VALUES
+  ('JOB_TYPE', '3D Printing', 1),
+  ('JOB_TYPE', 'Laser Cut', 2),
+  ('JOB_TYPE', 'CNC', 3),
+  ('JOB_TYPE', 'Vinyl Cut', 4)
 ON CONFLICT (category, label) DO NOTHING;
 
 -- (Printer Locations removed — location is now free-text on the printer form)

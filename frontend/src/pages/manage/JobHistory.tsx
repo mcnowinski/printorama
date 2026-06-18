@@ -18,7 +18,7 @@ function fmt(d: string) {
 
 const fieldLabels: Record<string, string> = {
   status: 'Status',
-  printer: 'Printer',
+  printer: 'Tool',
   notes: 'Notes',
 }
 
