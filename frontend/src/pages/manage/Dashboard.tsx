@@ -26,16 +26,6 @@ function formatDate(d: string) {
   return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss} ${ampm}`
 }
 
-const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
-  FABRICATING: 'info',
-  COMPLETE: 'success',
-  FAILED: 'destructive',
-  CANCELLED: 'default',
-  AWAITING_CONFIRMATION: 'default',
-}
-
 export default function Dashboard() {
   const { profile } = useAuth()
   const navigate = useNavigate()
@@ -45,7 +35,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [statusOptions, setStatusOptions] = useState<{ label: string }[]>([])
+  
   const [acceptedExtensions, setAcceptedExtensions] = useState<string[]>([])
   const [addFile, setAddFile] = useState<File | null>(null)
   const [addFileError, setAddFileError] = useState<string | null>(null)
@@ -54,18 +44,21 @@ export default function Dashboard() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
+  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
   const [addForm, setAddForm] = useState({
-    title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED',
+    title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED', jobType: '',
   })
 
   useEffect(() => {
     loadJobs()
     loadQueue()
-    supabase.from('dropdown_options').select('label').eq('category', 'JOB_STATUS').order('sort_order').then(({ data }) => {
-      setStatusOptions(data || [])
-    })
     supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
       setAcceptedExtensions((data || []).map((d: any) => d.label))
+    })
+    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
+      const map: Record<string, string> = {}
+      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
+      setOptionColors(map)
     })
   }, [])
 
@@ -101,6 +94,7 @@ export default function Dashboard() {
       status: addForm.status,
       submitted_at: new Date().toISOString(),
       file_url: fileUrl,
+      job_type: addForm.jobType.trim(),
     }).select('id').single()
 
     if (newJob) {
@@ -115,7 +109,7 @@ export default function Dashboard() {
     setShowAddForm(false)
     setAddFile(null)
     setAddFileError(null)
-    setAddForm({ title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED' })
+    setAddForm({ title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED', jobType: ''})
     loadJobs()
   }
 
@@ -209,11 +203,6 @@ export default function Dashboard() {
               <div className="space-y-2"><Label>Title</Label>
                 <Input value={addForm.title} onChange={(e) => setAddForm({ ...addForm, title: e.target.value })} placeholder="My Job" />
               </div>
-              <div className="space-y-2"><Label>Status</Label>
-                <Select value={addForm.status} onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}>
-                  {statusOptions.map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
-                </Select>
-              </div>
               <div className="space-y-2"><Label>Student Name</Label>
                 <Input value={addForm.studentName} onChange={(e) => setAddForm({ ...addForm, studentName: e.target.value })} placeholder="Jane Doe" />
               </div>
@@ -280,15 +269,18 @@ export default function Dashboard() {
                 <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('status')}>
                   Status{sortField === 'status' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
                 </th>
+                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('job_type')}>
+                  Type{sortField === 'job_type' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                </th>
                 <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('printer')}>
-                  Printer{sortField === 'printer' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  Tool{sortField === 'printer' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
                 </th>
                 <th className="h-12 px-4 font-medium text-neutral-500"></th>
               </tr>
             </thead>
             <tbody>
               {paginatedItems.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
               ) : (
                 paginatedItems.map((item) => (
                   <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
@@ -298,8 +290,11 @@ export default function Dashboard() {
                       {item._isQueue ? (
                         <Badge variant="warning">PENDING</Badge>
                       ) : (
-                        <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
+                        <Badge variant={(optionColors[item.status] || 'default') as any}>{item.status}</Badge>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {item.job_type ? <Badge variant={(optionColors[item.job_type] || 'secondary') as any}>{item.job_type}</Badge> : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-neutral-500">
                       {item.printers?.name || '—'}

@@ -13,9 +13,10 @@ import { Dialog, ConfirmDialog } from '../../components/ui/dialog'
 
 const CATEGORIES = [
   { value: 'JOB_STATUS', label: 'Job Status' },
+  { value: 'JOB_TYPE', label: 'Job Type' },
   { value: 'FILAMENT_TYPE', label: 'Filament Type' },
   { value: 'FILAMENT_COLOR', label: 'Filament Color' },
-  { value: 'ACCEPTED_FILE_TYPE', label: 'Accepted File Type' },
+  { value: 'ACCEPTED_FILE_TYPE', label: 'File Type' },
 ]
 
 const statusBadge: Record<string, 'default' | 'success' | 'warning' | 'destructive'> = {
@@ -35,6 +36,7 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editSort, setEditSort] = useState(0)
+  const [editColor, setEditColor] = useState('secondary')
   const [optPage, setOptPage] = useState(0)
   const [optPageSize, setOptPageSize] = useState(20)
 
@@ -106,15 +108,16 @@ export default function Settings() {
     setConfirmOptId(id)
   }
 
-  function startEdit(id: string, label: string, sortOrder: number) {
+  function startEdit(id: string, label: string, sortOrder: number, color: string) {
     setEditingId(id)
     setEditLabel(label)
     setEditSort(sortOrder)
+    setEditColor(color || 'secondary')
   }
 
   async function handleSaveEdit(id: string) {
     if (!editLabel.trim()) return
-    await supabase.from('dropdown_options').update({ label: editLabel.trim(), sort_order: editSort }).eq('id', id)
+    await supabase.from('dropdown_options').update({ label: editLabel.trim(), sort_order: editSort, color: editColor }).eq('id', id)
     setEditingId(null)
     loadOptions()
   }
@@ -123,6 +126,7 @@ export default function Settings() {
     setEditingId(null)
     setEditLabel('')
     setEditSort(0)
+    setEditColor('secondary')
   }
 
   async function handleAddPrinter() {
@@ -180,6 +184,7 @@ export default function Settings() {
     setConfirmPrinterId(id)
   }
 
+  const showColor = ['JOB_STATUS', 'JOB_TYPE'].includes(category)
   const optTotalPages = Math.max(1, Math.ceil(options.length / optPageSize))
   const safeOptPage = Math.min(optPage, optTotalPages - 1)
   const paginatedOptions = options.slice(safeOptPage * optPageSize, (safeOptPage + 1) * optPageSize)
@@ -435,6 +440,7 @@ Add Tool
               <TableRow>
                 <TableHead>Label</TableHead>
                 <TableHead>Sort Order</TableHead>
+                {showColor && <TableHead>Color</TableHead>}
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -458,6 +464,16 @@ Add Tool
                           className="h-8 w-20"
                         />
                       </TableCell>
+                      {showColor && <TableCell>
+                        <Select value={editColor} onChange={(e) => setEditColor(e.target.value)} className="h-8 w-28 text-xs">
+                          <option value="default">Gray</option>
+                          <option value="secondary">Blue</option>
+                          <option value="success">Green</option>
+                          <option value="warning">Yellow</option>
+                          <option value="destructive">Red</option>
+                          <option value="info">Purple</option>
+                        </Select>
+                      </TableCell>}
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="sm" onClick={() => handleSaveEdit(o.id)} className="text-xs">Save</Button>
@@ -467,11 +483,26 @@ Add Tool
                     </>
                   ) : (
                     <>
-                      <TableCell className="font-medium">{o.label}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {showColor && <span className={`inline-block h-3 w-3 rounded-full ${
+                            o.color === 'info' ? 'bg-purple-500' :
+                            o.color === 'warning' ? 'bg-yellow-500' :
+                            o.color === 'success' ? 'bg-green-500' :
+                            o.color === 'destructive' ? 'bg-red-500' :
+                            o.color === 'secondary' ? 'bg-blue-500' :
+                            'bg-gray-400'
+                          }`} />}
+                          {o.label}
+                        </div>
+                      </TableCell>
                       <TableCell>{o.sort_order}</TableCell>
+                      {showColor && <TableCell className="text-xs text-neutral-400">
+        {({ default: 'Gray', secondary: 'Blue', success: 'Green', warning: 'Yellow', destructive: 'Red', info: 'Purple' } as Record<string, string>)[o.color || 'secondary']}
+      </TableCell>}
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" title="Edit option" onClick={() => startEdit(o.id, o.label, o.sort_order)}>
+                          <Button variant="ghost" size="sm" title="Edit option" onClick={() => startEdit(o.id, o.label, o.sort_order, o.color)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Delete option" onClick={() => handleDelete(o.id)}>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Search, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+// colors now loaded from dropdown_options DB table
 
 function fmt(d: string) {
   const date = new Date(d)
@@ -22,15 +23,6 @@ function fmt(d: string) {
   return `${mm}/${dd}/${yyyy} ${hh}:${mi}:${ss} ${ampm}`
 }
 
-const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
-  FABRICATING: 'info',
-  COMPLETE: 'success',
-  FAILED: 'destructive',
-  CANCELLED: 'default',
-}
-
 export default function Status() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -41,6 +33,15 @@ export default function Status() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
+  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
+      const map: Record<string, string> = {}
+      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
+      setOptionColors(map)
+    })
+  }, [])
 
   async function handleSearch() {
     if (!email) return
@@ -136,9 +137,9 @@ export default function Status() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-neutral-800 text-left">
-                {['title', 'created_at', 'modified', 'status'].map((field) => (
+                {['title', 'created_at', 'modified', 'status', 'job_type'].map((field) => (
                   <th key={field} className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort(field)}>
-                    {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : 'Status'}
+                    {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : field === 'status' ? 'Status' : 'Type'}
                     {sortField === field && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
                   </th>
                 ))}
@@ -152,8 +153,9 @@ export default function Status() {
                     <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.submitted_at || item.created_at)}</td>
                     <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.updated_at || item.created_at)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
+                      <Badge variant={(optionColors[item._statusKey] || 'default') as any}>{item._status}</Badge>
                     </td>
+                    <td className="px-4 py-3">{item.job_type ? <Badge variant={(optionColors[item.job_type] || 'secondary') as any}>{item.job_type}</Badge> : <span className="text-sm text-neutral-500">—</span>}</td>
                     <td className="px-4 py-3">
                       <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/status/${item.id}?email=${encodeURIComponent(email)}`)}>
                         <Clock className="h-4 w-4" />

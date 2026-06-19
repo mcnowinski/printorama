@@ -17,15 +17,6 @@ function fmt(d: string) {
   return `${mm}/${dd}/${yyyy} ${hh}:${mi} ${ampm}`
 }
 
-const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
-  FABRICATING: 'info',
-  COMPLETE: 'success',
-  FAILED: 'destructive',
-  CANCELLED: 'default',
-}
-
 const fieldLabels: Record<string, string> = {
   status: 'Status',
   printer: 'Tool',
@@ -37,12 +28,19 @@ export default function StatusDetail() {
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email') || ''
   const [job, setJob] = useState<any>(null)
+  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
   const [history, setHistory] = useState<any[]>([])
   const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!id) return
+
+    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
+      const map: Record<string, string> = {}
+      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
+      setOptionColors(map)
+    })
 
     async function load() {
       if (email) {
@@ -90,7 +88,7 @@ export default function StatusDetail() {
             <CardTitle>{job.title || 'Job Details'}</CardTitle>
             <p className="text-sm text-neutral-500">{job.student_name} &lt;{job.student_email}&gt;</p>
           </div>
-          <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
+          <Badge variant={(optionColors[job.status] || 'default') as any} className="text-sm">
             {job.status}
           </Badge>
         </CardHeader>

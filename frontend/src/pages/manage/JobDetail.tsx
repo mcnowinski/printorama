@@ -6,7 +6,6 @@ import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { Select } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
 import { ArrowLeft, Loader2, Pencil, Trash2, Plus } from 'lucide-react'
 import { ConfirmDialog } from '../../components/ui/dialog'
 
@@ -15,24 +14,17 @@ function fmt(d: string) {
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 }
 
-const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
-  FABRICATING: 'info',
-  COMPLETE: 'success',
-  FAILED: 'destructive',
-  CANCELLED: 'default',
-}
-
 export default function ManageJobDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [job, setJob] = useState<any>(null)
   const [printers, setPrinters] = useState<any[]>([])
   const [statuses, setStatuses] = useState<{ label: string }[]>([])
+  const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [saving, setSaving] = useState(false)
 
   const [status, setStatus] = useState('')
+  const [jobType, setJobType] = useState('')
   const [printerId, setPrinterId] = useState('')
   const [notes, setNotes] = useState<any[]>([])
   const [newNote, setNewNote] = useState('')
@@ -48,6 +40,7 @@ export default function ManageJobDetail() {
       if (data) {
         setJob(data)
         setStatus(data.status)
+        setJobType(data.job_type || '')
         setPrinterId(data.printer_id || '')
       }
     })
@@ -55,6 +48,10 @@ export default function ManageJobDetail() {
     loadNotes()
     loadPrinters()
     loadStatuses()
+    supabase.from('dropdown_options').select('label').eq('category', 'JOB_TYPE').order('sort_order').then(({ data }) => {
+      setJobTypes(data || [])
+    })
+    loadJobTypes()
   }, [id])
 
   async function loadNotes() {
@@ -73,6 +70,11 @@ export default function ManageJobDetail() {
     setStatuses(data || [])
   }
 
+  async function loadJobTypes() {
+    const { data } = await supabase.from('dropdown_options').select('label').eq('category', 'JOB_TYPE').order('sort_order')
+    setJobTypes(data || [])
+  }
+
   async function handleSave() {
     if (!id) return
     setSaving(true)
@@ -81,7 +83,7 @@ export default function ManageJobDetail() {
     const oldPrinterId = job.printer_id
     const { error } = await supabase
       .from('jobs')
-      .update({ status, printer_id: printerId || null })
+      .update({ status, job_type: jobType || null, printer_id: printerId || null })
       .eq('id', id)
 
     if (error) { console.error('Job update failed:', error); setSaving(false); return }
@@ -156,7 +158,7 @@ export default function ManageJobDetail() {
             <CardTitle>{job.title || 'Job'}</CardTitle>
             <p className="text-sm text-neutral-500">{job.student_name} &lt;{job.student_email}&gt;</p>
           </div>
-          <Badge variant={statusColors[job.status] || 'default'}>{job.status}</Badge>
+          {/* <Badge variant={statusColors[job.status] || 'default'}>{job.status}</Badge> */}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -171,6 +173,13 @@ export default function ManageJobDetail() {
             <Label>Status</Label>
             <Select value={status} onChange={(e) => setStatus(e.target.value)}>
               {statuses.filter((s) => s.label !== 'PENDING').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={jobType} onChange={(e) => setJobType(e.target.value)}>
+              <option value="">Select type...</option>
+              {jobTypes.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
             </Select>
           </div>
           <div className="space-y-2">
