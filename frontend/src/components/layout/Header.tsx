@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { Printer } from 'lucide-react'
+import { Lightbulb } from 'lucide-react'
 import { Button } from '../ui/button'
 
 export function Header() {
@@ -16,7 +16,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2 text-lg font-semibold">
-          <Printer className="h-6 w-6" />
+          <Lightbulb className="h-6 w-6" />
           Fab-O-Rama
         </Link>
         <nav className="flex items-center gap-4">

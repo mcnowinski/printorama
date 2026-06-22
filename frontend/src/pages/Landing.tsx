@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader } from '../components/ui/card'
 import { useAuth } from '../contexts/AuthContext'
-import { Printer, Search } from 'lucide-react'
+import { Lightbulb, Search } from 'lucide-react'
 
 export default function Landing() {
   const { user, loading } = useAuth()
@@ -28,7 +28,7 @@ export default function Landing() {
       <div className="grid w-full max-w-3xl gap-6 sm:grid-cols-2">
         <Card className="text-center">
           <CardHeader>
-            <Printer className="mx-auto h-8 w-8 text-neutral-500" />
+            <Lightbulb className="mx-auto h-8 w-8 text-neutral-500" />
           </CardHeader>
           <CardContent className="space-y-4">
             <Link to="/request">
