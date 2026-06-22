@@ -22,6 +22,8 @@ export default function Request() {
   const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [confirmEmail, setConfirmEmail] = useState('')
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -45,6 +47,22 @@ export default function Request() {
       setJobTypes(data || [])
     })
   }, [])
+
+  useEffect(() => {
+    if (!confirmEmail) {
+      setEmailError(null)
+      return
+    }
+    if (form.studentEmail !== confirmEmail) {
+      setEmailError('Email addresses do not match.')
+    } else {
+      setEmailError(null)
+    }
+  }, [form.studentEmail, confirmEmail])
+
+  function validateEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
 
   function validateFile(f: File): string | null {
     const ext = f.name.split('.').pop()?.toLowerCase()
@@ -84,6 +102,9 @@ export default function Request() {
     e.preventDefault()
     if (!form.largestDimension) return
     if (!file) { setFileError('Please select a file to upload.'); return }
+    if (!validateEmail(form.studentEmail)) { setEmailError('Invalid email format.'); return }
+    if (form.studentEmail !== confirmEmail) { setEmailError('Email addresses do not match.'); return }
+    setEmailError(null)
     setLoading(true)
 
     let fileUrl: string | null = null
@@ -188,7 +209,7 @@ export default function Request() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">Your Name <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               required
@@ -209,6 +230,18 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="confirmEmail">Confirm Email <span className="text-red-500">*</span></Label>
+            <Input
+              id="confirmEmail"
+              type="email"
+              required
+              placeholder="jane@doe.com"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+            />
+            {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="title">Job Name <span className="text-red-500">*</span></Label>
             <Input
               id="title"
@@ -219,8 +252,8 @@ export default function Request() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Job Type</Label>
-            <Select value={form.jobType} onChange={(e) => setForm({ ...form, jobType: e.target.value })}>
+            <Label>Job Type <span className="text-red-500">*</span></Label>
+            <Select required value={form.jobType} onChange={(e) => setForm({ ...form, jobType: e.target.value })}>
               <option value="">Select job type...</option>
               {jobTypes.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
             </Select>
@@ -287,7 +320,7 @@ export default function Request() {
             <p className="text-xs text-neutral-400">Estimate the maximum overall dimension of your part.</p>
           </div>      
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Instructions</Label>
             <Textarea
               id="notes"
               placeholder="Provide any specific instructions..."

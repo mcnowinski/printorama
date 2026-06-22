@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Search, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-// colors now loaded from dropdown_options DB table
+import { statusColors, jobTypeColors } from '../lib/colors'
 
 function fmt(d: string) {
   const date = new Date(d)
@@ -25,7 +26,9 @@ function fmt(d: string) {
 
 export default function Status() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [searchParams] = useSearchParams()
+  const urlEmail = searchParams.get('email') || ''
+  const [email, setEmail] = useState(urlEmail)
   const [items, setItems] = useState<any[]>([])
   const [searched, setSearched] = useState(false)
   const [searching, setSearching] = useState(false)
@@ -33,14 +36,9 @@ export default function Status() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
-  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
-      const map: Record<string, string> = {}
-      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
-      setOptionColors(map)
-    })
+    if (urlEmail) handleSearch()
   }, [])
 
   async function handleSearch() {
@@ -126,7 +124,7 @@ export default function Status() {
       )}
 
       {searched && !searching && items.length === 0 && (
-        <Card><CardContent className="py-8 text-center text-neutral-500">No submissions found for this email address.</CardContent></Card>
+        <Card><CardContent className="py-8 text-center text-neutral-500">No jobs found for this email address.</CardContent></Card>
       )}
 
       {items.length > 0 && !searching && (
@@ -153,9 +151,9 @@ export default function Status() {
                     <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.submitted_at || item.created_at)}</td>
                     <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.updated_at || item.created_at)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={(optionColors[item._statusKey] || 'default') as any}>{item._status}</Badge>
+                      <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
                     </td>
-                    <td className="px-4 py-3">{item.job_type ? <Badge variant={(optionColors[item.job_type] || 'secondary') as any}>{item.job_type}</Badge> : <span className="text-sm text-neutral-500">—</span>}</td>
+                    <td className="px-4 py-3">{item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : <span className="text-sm text-neutral-500">—</span>}</td>
                     <td className="px-4 py-3">
                       <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/status/${item.id}?email=${encodeURIComponent(email)}`)}>
                         <Clock className="h-4 w-4" />

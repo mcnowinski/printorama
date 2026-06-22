@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Badge } from '../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { ArrowLeft } from 'lucide-react'
+import { statusColors } from '../lib/colors'
 
 function fmt(d: string) {
   const date = new Date(d)
@@ -28,7 +29,6 @@ export default function StatusDetail() {
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email') || ''
   const [job, setJob] = useState<any>(null)
-  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
   const [history, setHistory] = useState<any[]>([])
   const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -36,17 +36,17 @@ export default function StatusDetail() {
   useEffect(() => {
     if (!id) return
 
-    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
-      const map: Record<string, string> = {}
-      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
-      setOptionColors(map)
-    })
-
     async function load() {
       if (email) {
         const { data: jobs } = await supabase.rpc('get_my_jobs', { p_email: email })
         const found = (jobs || []).find((j: any) => j.id === id)
-        if (found) setJob(found)
+        if (found) {
+          setJob(found)
+        } else {
+          const { data: queueItems } = await supabase.rpc('get_my_queue_items', { p_email: email })
+          const queued = (queueItems || []).find((q: any) => q.id === id)
+          if (queued) setJob({ ...queued, status: 'PENDING' })
+        }
       } else {
         const { data } = await supabase.from('jobs').select('*, printers!left(name)').eq('id', id).single()
         setJob(data)
@@ -78,9 +78,15 @@ export default function StatusDetail() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link to="/status" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900">
-        <ArrowLeft className="mr-1 h-4 w-4" /> Back to my jobs
-      </Link>
+      {email ? (
+        <Link to={`/status?email=${encodeURIComponent(email)}`} className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900">
+          <ArrowLeft className="mr-1 h-4 w-4" /> Back to my jobs
+        </Link>
+      ) : (
+        <a href="/status" target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900">
+          <ArrowLeft className="mr-1 h-4 w-4" /> Back to my jobs
+        </a>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -88,7 +94,7 @@ export default function StatusDetail() {
             <CardTitle>{job.title || 'Job Details'}</CardTitle>
             <p className="text-sm text-neutral-500">{job.student_name} &lt;{job.student_email}&gt;</p>
           </div>
-          <Badge variant={(optionColors[job.status] || 'default') as any} className="text-sm">
+          <Badge variant={statusColors[job.status] || 'default'} className="text-sm">
             {job.status}
           </Badge>
         </CardHeader>
@@ -105,20 +111,20 @@ export default function StatusDetail() {
             )}
             {job.largest_dimension && (
               <div>
-                <span className="font-medium text-neutral-500">Dimension:</span>{' '}
+                <span className="font-medium text-neutral-500">Max. Dimension:</span>{' '}
                 {job.largest_dimension} {job.dimension_unit || 'mm'}
               </div>
             )}
-            {job.file_url && (
+            {/* {job.file_url && (
               <div className="col-span-2">
                 <span className="font-medium text-neutral-500">File:</span>{' '}
                 <a href={job.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-400">Download</a>
               </div>
-            )}
+            )} */}
           </div>
           {notes.length > 0 && (
             <div className="border-t pt-3 space-y-2">
-              <p className="text-sm font-medium text-neutral-500">Notes</p>
+              <p className="text-sm font-medium text-neutral-500">Instructions</p>
               {notes.map((n) => (
                 <div key={n.id} className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
                   <p className="text-sm">{n.content}</p>
@@ -130,7 +136,7 @@ export default function StatusDetail() {
         </CardContent>
       </Card>
 
-      {history.length > 0 && (
+      {history.length > 0 ? (
         <Card>
           <CardHeader><CardTitle>History</CardTitle></CardHeader>
           <CardContent>
@@ -160,7 +166,14 @@ export default function StatusDetail() {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : job.status === 'PENDING' ? (
+        <Card>
+          <CardHeader><CardTitle>History</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm text-neutral-500">Job is pending review.</p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   )
 }
