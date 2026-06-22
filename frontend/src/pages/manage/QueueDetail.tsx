@@ -13,8 +13,10 @@ export default function QueueDetail() {
   const [item, setItem] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [statusOptions, setStatusOptions] = useState<{ label: string }[]>([])
+  const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [printers, setPrinters] = useState<any[]>([])
   const [approveStatus, setApproveStatus] = useState('RECEIVED')
+  const [approveJobType, setApproveJobType] = useState('')
   const [approvePrinter, setApprovePrinter] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -23,10 +25,13 @@ export default function QueueDetail() {
     Promise.all([
       supabase.from('job_queue').select('*').eq('id', id).single(),
       supabase.from('dropdown_options').select('label').eq('category', 'JOB_STATUS').order('sort_order'),
+      supabase.from('dropdown_options').select('label').eq('category', 'JOB_TYPE').order('sort_order'),
       supabase.from('printers').select('*').order('name'),
-    ]).then(([itemResult, statusResult, printersResult]) => {
+    ]).then(([itemResult, statusResult, jobTypeResult, printersResult]) => {
       setItem(itemResult.data || null)
       setStatusOptions(statusResult.data || [])
+      setJobTypes(jobTypeResult.data || [])
+      setApproveJobType(itemResult.data?.job_type || '')
       setPrinters(printersResult.data || [])
       setLoading(false)
     })
@@ -43,6 +48,7 @@ export default function QueueDetail() {
         student_email: item.student_email,
         student_notes: item.student_notes,
         file_url: item.file_url,
+        job_type: approveJobType || null,
         largest_dimension: item.largest_dimension,
         dimension_unit: item.dimension_unit || 'mm',
         submitted_at: item.created_at,
@@ -101,7 +107,7 @@ export default function QueueDetail() {
 
           {item.student_notes && (
             <div>
-              <p className="text-sm font-medium text-neutral-500">Notes</p>
+              <p className="text-sm font-medium text-neutral-500">Instructions</p>
               <p className="mt-1 text-sm text-neutral-600">{item.student_notes}</p>
             </div>
           )}
@@ -121,6 +127,13 @@ export default function QueueDetail() {
                 <Label className="text-xs">Status</Label>
                 <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-40">
                   {statusOptions.filter((s) => s.label !== 'PENDING').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Type</Label>
+                <Select value={approveJobType} onChange={(e) => setApproveJobType(e.target.value)} className="w-48">
+                  <option value="">Select type...</option>
+                  {jobTypes.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
                 </Select>
               </div>
               <div className="space-y-1">
