@@ -151,6 +151,8 @@ export default function StatusDetail() {
                     <p className="text-sm">
                       {h.field === 'notes' && h.new_value === null ? (
                         <>Notes deleted: <span className="text-neutral-500">{h.old_value}</span></>
+                      ) : h.field === 'notes' && (!h.old_value || h.old_value === '(empty)') && h.new_value ? (
+                        <>Note added: <span className="text-neutral-500">{h.new_value}</span></>
                       ) : (
                         <><span className="font-medium">{fieldLabels[h.field] || h.field}</span>
                         {' changed from '}
