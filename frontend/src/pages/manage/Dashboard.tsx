@@ -10,6 +10,7 @@ import { Textarea } from '../../components/ui/textarea'
 import { Card, CardContent } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { Search, Settings, Users, Plus, Loader2, Upload, File, X, Pencil, Clock } from 'lucide-react'
+import { statusColors, jobTypeColors } from '../../lib/colors'
 
 const MAX_FILE_SIZE_MB = 50
 
@@ -44,7 +45,7 @@ export default function Dashboard() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(20)
-  const [optionColors, setOptionColors] = useState<Record<string, string>>({})
+  const [jobTypeOptions, setJobTypeOptions] = useState<{ label: string }[]>([])
   const [addForm, setAddForm] = useState({
     title: '', studentName: '', studentEmail: '', studentNotes: '', status: 'RECEIVED', jobType: '',
   })
@@ -55,10 +56,8 @@ export default function Dashboard() {
     supabase.from('dropdown_options').select('label').eq('category', 'ACCEPTED_FILE_TYPE').order('sort_order').then(({ data }) => {
       setAcceptedExtensions((data || []).map((d: any) => d.label))
     })
-    supabase.from('dropdown_options').select('label, color').then(({ data }) => {
-      const map: Record<string, string> = {}
-      ;(data || []).forEach((o: any) => { map[o.label] = o.color || 'secondary' })
-      setOptionColors(map)
+    supabase.from('dropdown_options').select('label').eq('category', 'JOB_TYPE').order('sort_order').then(({ data }) => {
+      setJobTypeOptions(data || [])
     })
   }, [])
 
@@ -203,13 +202,19 @@ export default function Dashboard() {
               <div className="space-y-2"><Label>Title</Label>
                 <Input value={addForm.title} onChange={(e) => setAddForm({ ...addForm, title: e.target.value })} placeholder="My Job" />
               </div>
+              <div className="space-y-2"><Label>Type</Label>
+                <Select value={addForm.jobType} onChange={(e) => setAddForm({ ...addForm, jobType: e.target.value })}>
+                  <option value="">Select type...</option>
+                  {jobTypeOptions.map((t) => <option key={t.label} value={t.label}>{t.label}</option>)}
+                </Select>
+              </div>
               <div className="space-y-2"><Label>Student Name</Label>
                 <Input value={addForm.studentName} onChange={(e) => setAddForm({ ...addForm, studentName: e.target.value })} placeholder="Jane Doe" />
               </div>
               <div className="space-y-2"><Label>Student Email</Label>
                 <Input value={addForm.studentEmail} onChange={(e) => setAddForm({ ...addForm, studentEmail: e.target.value })} placeholder="jane@doe.com" />
               </div>
-              <div className="col-span-2 space-y-2"><Label>Notes</Label>
+              <div className="col-span-2 space-y-2"><Label>Instructions</Label>
                 <Textarea value={addForm.studentNotes} onChange={(e) => setAddForm({ ...addForm, studentNotes: e.target.value })} placeholder="Any special instructions..." />
               </div>
               <div className="col-span-2 space-y-2"><Label>File</Label>
@@ -290,11 +295,11 @@ export default function Dashboard() {
                       {item._isQueue ? (
                         <Badge variant="warning">PENDING</Badge>
                       ) : (
-                        <Badge variant={(optionColors[item.status] || 'default') as any}>{item.status}</Badge>
+                        <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-neutral-500">
-                      {item.job_type ? <Badge variant={(optionColors[item.job_type] || 'secondary') as any}>{item.job_type}</Badge> : '—'}
+                      {item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-neutral-500">
                       {item.printers?.name || '—'}

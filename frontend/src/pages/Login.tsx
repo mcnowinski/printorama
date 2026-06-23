@@ -32,7 +32,7 @@ export default function Login() {
   return (
     <Card className="mx-auto max-w-sm mt-12">
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <CardTitle>Sign In (Staff Only)</CardTitle>
         <CardDescription>
           Enter your email and password below.
         </CardDescription>

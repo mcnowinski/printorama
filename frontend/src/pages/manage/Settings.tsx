@@ -36,7 +36,6 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [editSort, setEditSort] = useState(0)
-  const [editColor, setEditColor] = useState('secondary')
   const [optPage, setOptPage] = useState(0)
   const [optPageSize, setOptPageSize] = useState(20)
 
@@ -108,16 +107,15 @@ export default function Settings() {
     setConfirmOptId(id)
   }
 
-  function startEdit(id: string, label: string, sortOrder: number, color: string) {
+  function startEdit(id: string, label: string, sortOrder: number) {
     setEditingId(id)
     setEditLabel(label)
     setEditSort(sortOrder)
-    setEditColor(color || 'secondary')
   }
 
   async function handleSaveEdit(id: string) {
     if (!editLabel.trim()) return
-    await supabase.from('dropdown_options').update({ label: editLabel.trim(), sort_order: editSort, color: editColor }).eq('id', id)
+    await supabase.from('dropdown_options').update({ label: editLabel.trim(), sort_order: editSort }).eq('id', id)
     setEditingId(null)
     loadOptions()
   }
@@ -126,7 +124,6 @@ export default function Settings() {
     setEditingId(null)
     setEditLabel('')
     setEditSort(0)
-    setEditColor('secondary')
   }
 
   async function handleAddPrinter() {
@@ -184,7 +181,6 @@ export default function Settings() {
     setConfirmPrinterId(id)
   }
 
-  const showColor = ['JOB_STATUS', 'JOB_TYPE'].includes(category)
   const optTotalPages = Math.max(1, Math.ceil(options.length / optPageSize))
   const safeOptPage = Math.min(optPage, optTotalPages - 1)
   const paginatedOptions = options.slice(safeOptPage * optPageSize, (safeOptPage + 1) * optPageSize)
@@ -204,15 +200,73 @@ export default function Settings() {
           </button>
           <h1 className="text-2xl font-bold">Settings</h1>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">System configuration, printer management, and dropdown lists</p>
+        <p className="mt-1 text-sm text-neutral-500">Configure system settings</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Jobs</CardTitle>
+          <CardDescription>Control how jobs are managed.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base">Accept New Jobs</Label>
+              <p className="text-sm text-neutral-500">Allow students to submit new jobs.</p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={settings.requests_open}
+                onChange={(e) => setSettings({ ...settings, requests_open: e.target.checked })}
+              />
+              <div className="h-6 w-11 rounded-full bg-neutral-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-neutral-900 peer-checked:after:translate-x-full dark:bg-neutral-700 peer-checked:dark:bg-neutral-100" />
+            </label>
+          </div>
+
+          {/* <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-base">Email Confirmation Required</Label>
+              <p className="text-sm text-neutral-500">Students must click a confirmation link in their email before the job is queued.</p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={settings.email_confirmation_required}
+                onChange={(e) => setSettings({ ...settings, email_confirmation_required: e.target.checked })}
+              />
+              <div className="h-6 w-11 rounded-full bg-neutral-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-neutral-900 peer-checked:after:translate-x-full dark:bg-neutral-700 peer-checked:dark:bg-neutral-100" />
+            </label>
+          </div> */}
+
+          <div>
+            <Label className="text-base">Max. Daily Jobs Per Student</Label>
+            <p className="text-sm text-neutral-500">Limit the number of submissions from a single email address per day.</p>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              className="mt-2 w-24 rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+              value={settings.max_jobs_per_day}
+              onChange={(e) => setSettings({ ...settings, max_jobs_per_day: parseInt(e.target.value) || 1 })}
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Settings
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Tools</CardTitle>
-              <CardDescription>Manage the tools.</CardDescription>
+              <CardDescription>Manage the printers, laser cutters, etc.</CardDescription>
             </div>
             <Button onClick={() => setShowForm(!showForm)} size="sm">
               <Plus className="mr-2 h-4 w-4" /> Add Tool
@@ -367,66 +421,8 @@ Add Tool
 
       <Card>
         <CardHeader>
-          <CardTitle>Job Submissions</CardTitle>
-          <CardDescription>Control how students submit print jobs.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-base">Job Requests Open</Label>
-              <p className="text-sm text-neutral-500">Allow students to submit new print jobs.</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={settings.requests_open}
-                onChange={(e) => setSettings({ ...settings, requests_open: e.target.checked })}
-              />
-              <div className="h-6 w-11 rounded-full bg-neutral-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-neutral-900 peer-checked:after:translate-x-full dark:bg-neutral-700 peer-checked:dark:bg-neutral-100" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-base">Email Confirmation Required</Label>
-              <p className="text-sm text-neutral-500">Students must click a confirmation link in their email before the job is queued.</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={settings.email_confirmation_required}
-                onChange={(e) => setSettings({ ...settings, email_confirmation_required: e.target.checked })}
-              />
-              <div className="h-6 w-11 rounded-full bg-neutral-300 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-neutral-900 peer-checked:after:translate-x-full dark:bg-neutral-700 peer-checked:dark:bg-neutral-100" />
-            </label>
-          </div>
-
-          <div>
-            <Label className="text-base">Max Jobs Per Day Per Email</Label>
-            <p className="text-sm text-neutral-500">Limit the number of submissions from a single email address per day.</p>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              className="mt-2 w-24 rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
-              value={settings.max_jobs_per_day}
-              onChange={(e) => setSettings({ ...settings, max_jobs_per_day: parseInt(e.target.value) || 1 })}
-            />
-          </div>
-
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Settings
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Options</CardTitle>
-          <CardDescription>Manage the options available in dropdown selectors throughout the site.</CardDescription>
+          <CardDescription>Manage the options available in dropdowns.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-64">
@@ -440,7 +436,6 @@ Add Tool
               <TableRow>
                 <TableHead>Label</TableHead>
                 <TableHead>Sort Order</TableHead>
-                {showColor && <TableHead>Color</TableHead>}
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -450,30 +445,11 @@ Add Tool
                   {editingId === o.id ? (
                     <>
                       <TableCell>
-                        <Input
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          className="h-8 max-w-48"
-                        />
+                        <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="h-8 max-w-48" />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="number"
-                          value={editSort}
-                          onChange={(e) => setEditSort(parseInt(e.target.value) || 0)}
-                          className="h-8 w-20"
-                        />
+                        <Input type="number" value={editSort} onChange={(e) => setEditSort(parseInt(e.target.value) || 0)} className="h-8 w-20" />
                       </TableCell>
-                      {showColor && <TableCell>
-                        <Select value={editColor} onChange={(e) => setEditColor(e.target.value)} className="h-8 w-28 text-xs">
-                          <option value="default">Gray</option>
-                          <option value="secondary">Blue</option>
-                          <option value="success">Green</option>
-                          <option value="warning">Yellow</option>
-                          <option value="destructive">Red</option>
-                          <option value="info">Purple</option>
-                        </Select>
-                      </TableCell>}
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="sm" onClick={() => handleSaveEdit(o.id)} className="text-xs">Save</Button>
@@ -483,26 +459,11 @@ Add Tool
                     </>
                   ) : (
                     <>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {showColor && <span className={`inline-block h-3 w-3 rounded-full ${
-                            o.color === 'info' ? 'bg-purple-500' :
-                            o.color === 'warning' ? 'bg-yellow-500' :
-                            o.color === 'success' ? 'bg-green-500' :
-                            o.color === 'destructive' ? 'bg-red-500' :
-                            o.color === 'secondary' ? 'bg-blue-500' :
-                            'bg-gray-400'
-                          }`} />}
-                          {o.label}
-                        </div>
-                      </TableCell>
+                      <TableCell className="font-medium">{o.label}</TableCell>
                       <TableCell>{o.sort_order}</TableCell>
-                      {showColor && <TableCell className="text-xs text-neutral-400">
-        {({ default: 'Gray', secondary: 'Blue', success: 'Green', warning: 'Yellow', destructive: 'Red', info: 'Purple' } as Record<string, string>)[o.color || 'secondary']}
-      </TableCell>}
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="sm" title="Edit option" onClick={() => startEdit(o.id, o.label, o.sort_order, o.color)}>
+                          <Button variant="ghost" size="sm" title="Edit option" onClick={() => startEdit(o.id, o.label, o.sort_order)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Delete option" onClick={() => handleDelete(o.id)}>

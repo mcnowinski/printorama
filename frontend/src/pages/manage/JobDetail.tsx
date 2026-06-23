@@ -8,6 +8,7 @@ import { Select } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { ArrowLeft, Loader2, Pencil, Trash2, Plus } from 'lucide-react'
 import { ConfirmDialog } from '../../components/ui/dialog'
+import { downloadFile } from '../../lib/download'
 
 function fmt(d: string) {
   const date = new Date(d)
@@ -165,8 +166,8 @@ export default function ManageJobDetail() {
             <div><span className="font-medium text-neutral-500">Submitted:</span> {new Date(job.created_at).toLocaleString()}</div>
             <div><span className="font-medium text-neutral-500">Updated:</span> {new Date(job.updated_at).toLocaleString()}</div>
             {job.largest_dimension && <div><span className="font-medium text-neutral-500">Dimension:</span> {job.largest_dimension} {job.dimension_unit || 'mm'}</div>}
-            {job.file_url && <div className="col-span-2"><span className="font-medium text-neutral-500">File:</span> <a href={job.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-400">Download</a></div>}
-            {job.student_notes && <div className="col-span-2"><span className="font-medium text-neutral-500">Student Notes:</span><p className="mt-1 text-neutral-600">{job.student_notes}</p></div>}
+            {job.file_url && <div className="col-span-2"><span className="font-medium text-neutral-500">File:</span> <button onClick={() => downloadFile(job.file_url, job.title || job.student_name, job.student_name, job.submitted_at || job.created_at)} className="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 cursor-pointer">Download</button></div>}
+            {job.student_notes && <div className="col-span-2"><span className="font-medium text-neutral-500">Instructions:</span><p className="mt-1 text-neutral-600">{job.student_notes}</p></div>}
           </div>
 
           <div className="space-y-2">

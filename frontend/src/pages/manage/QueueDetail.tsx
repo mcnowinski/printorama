@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label'
 import { Select } from '../../components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { downloadFile } from '../../lib/download'
 
 export default function QueueDetail() {
   const { id } = useParams()
@@ -115,9 +116,9 @@ export default function QueueDetail() {
           {item.file_url && (
             <div>
               <p className="text-sm font-medium text-neutral-500">File</p>
-              <a href={item.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+              <button onClick={() => downloadFile(item.file_url, item.title || item.student_name, item.student_name, item.created_at)} className="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 cursor-pointer">
                 {item.original_filename || item.file_url.split('/').pop()}
-              </a>
+              </button>
             </div>
           )}
 
