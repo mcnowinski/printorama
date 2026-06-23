@@ -32,6 +32,12 @@ const handlers = [
         { id: '3', category: 'JOB_STATUS', label: 'COMPLETE', sort_order: 3 },
       ])
     }
+    if (category === 'JOB_TYPE' || category === 'eq.JOB_TYPE') {
+      return HttpResponse.json([
+        { id: '1', category: 'JOB_TYPE', label: '3D Printing', sort_order: 1 },
+        { id: '2', category: 'JOB_TYPE', label: 'Laser Cut', sort_order: 2 },
+      ])
+    }
     return HttpResponse.json([])
   }),
 
@@ -48,6 +54,10 @@ const handlers = [
       { id: 'p1', name: 'Prusa MK4 #1', brand: 'Prusa', model: 'MK4', location: 'Lab 310', status: 'ONLINE', notes: '' },
       { id: 'p2', name: 'Bambu X1C', brand: 'Bambu Lab', model: 'X1C', location: 'Lab 312', status: 'OFFLINE', notes: 'Needs calibration' },
     ])
+  ),
+
+  http.post(`${supabaseUrl}/rest/v1/jobs`, () =>
+    HttpResponse.json([{ id: 'new-job-id' }], { status: 201 })
   ),
 
   http.get(`${supabaseUrl}/rest/v1/jobs`, () =>
@@ -82,7 +92,20 @@ const handlers = [
   http.get(`${supabaseUrl}/rest/v1/users`, () =>
     HttpResponse.json([
       { id: 'u1', name: 'Admin', email: 'admin@vt.edu', role: 'ADMINISTRATOR' },
+      { id: 'u2', name: 'Manager One', email: 'manager@vt.edu', role: 'MANAGER' },
     ])
+  ),
+
+  http.post(`${supabaseUrl}/functions/v1/admin-create-user`, () =>
+    HttpResponse.json({ success: true }, { status: 200 })
+  ),
+
+  http.patch(`${supabaseUrl}/rest/v1/users`, () =>
+    HttpResponse.json([{ id: 'u1' }], { status: 200 })
+  ),
+
+  http.delete(`${supabaseUrl}/rest/v1/users`, () =>
+    HttpResponse.json(null, { status: 200 })
   ),
 ]
 
