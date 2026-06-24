@@ -254,6 +254,23 @@ export default function Settings() {
             />
           </div>
 
+          <hr className="border-neutral-200 dark:border-neutral-800" />
+
+          <div className="space-y-4">
+            <Label className="text-base">Email Notifications</Label>
+            <p className="text-sm text-neutral-500">Configure notification emails sent to students on status changes.</p>
+            <div>
+              <Label>Subject Prefix</Label>
+              <Input value={settings.email_subject_prefix || '[Fab-O-Rama]'} onChange={(e) => setSettings({ ...settings, email_subject_prefix: e.target.value })} className="max-w-sm mt-1" />
+              <p className="text-xs text-neutral-400 mt-0.5">Prepended to all email subjects, e.g. "[Fab-O-Rama] Job Name — status changed to COMPLETE"</p>
+            </div>
+            <div>
+              <Label>Site URL</Label>
+              <Input value={settings.site_url || ''} onChange={(e) => setSettings({ ...settings, site_url: e.target.value })} className="max-w-sm mt-1" placeholder="https://fab-o-rama.vt.edu" />
+              <p className="text-xs text-neutral-400 mt-0.5">Base URL for links in emails (no trailing slash).</p>
+            </div>
+          </div>
+
           <Button onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Settings
