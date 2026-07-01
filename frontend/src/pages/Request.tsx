@@ -23,7 +23,8 @@ export default function Request() {
   const [file, setFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const [confirmEmail, setConfirmEmail] = useState('')
-  const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailFormatError, setEmailFormatError] = useState<string | null>(null)
+  const [emailMatchError, setEmailMatchError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -48,17 +49,22 @@ export default function Request() {
     })
   }, [])
 
-  useEffect(() => {
-    if (!confirmEmail) {
-      setEmailError(null)
+  function handleEmailBlur() {
+    if (form.studentEmail && !validateEmail(form.studentEmail)) {
+      setEmailFormatError('Invalid email format.')
       return
     }
+    setEmailFormatError(null)
+  }
+
+  function handleConfirmBlur() {
+    if (!confirmEmail || !form.studentEmail) { setEmailMatchError(null); return }
     if (form.studentEmail !== confirmEmail) {
-      setEmailError('Email addresses do not match.')
+      setEmailMatchError('Emails do not match.')
     } else {
-      setEmailError(null)
+      setEmailMatchError(null)
     }
-  }, [form.studentEmail, confirmEmail])
+  }
 
   function validateEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -102,9 +108,8 @@ export default function Request() {
     e.preventDefault()
     if (!form.largestDimension) return
     if (!file) { setFileError('Please select a file to upload.'); return }
-    if (!validateEmail(form.studentEmail)) { setEmailError('Invalid email format.'); return }
-    if (form.studentEmail !== confirmEmail) { setEmailError('Email addresses do not match.'); return }
-    setEmailError(null)
+    if (!validateEmail(form.studentEmail)) { setEmailFormatError('Invalid email format.'); return }
+    if (form.studentEmail !== confirmEmail) { setEmailMatchError('Emails do not match.'); return }
     setLoading(true)
 
     let fileUrl: string | null = null
@@ -226,8 +231,10 @@ export default function Request() {
               required
               placeholder="jane@doe.com"
               value={form.studentEmail}
-              onChange={(e) => setForm({ ...form, studentEmail: e.target.value })}
+              onChange={(e) => { setForm({ ...form, studentEmail: e.target.value }); setEmailFormatError(null) }}
+              onBlur={handleEmailBlur}
             />
+            {emailFormatError && <p className="text-sm text-red-600">{emailFormatError}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmEmail">Confirm Email <span className="text-red-500">*</span></Label>
@@ -237,9 +244,10 @@ export default function Request() {
               required
               placeholder="jane@doe.com"
               value={confirmEmail}
-              onChange={(e) => setConfirmEmail(e.target.value)}
+              onBlur={handleConfirmBlur}
+              onChange={(e) => { setConfirmEmail(e.target.value); setEmailMatchError(null) }}
             />
-            {emailError && <p className="text-sm text-red-600">{emailError}</p>}
+            {emailMatchError && <p className="text-sm text-red-600">{emailMatchError}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="title">Job Name <span className="text-red-500">*</span></Label>
