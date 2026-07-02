@@ -46,10 +46,10 @@ describe('Dashboard', () => {
     expect(await screen.findByText('Phone Case')).toBeInTheDocument()
   })
 
-  it('displays pending queue items', async () => {
+  it('displays queue items', async () => {
     expect(await screen.findByText('My Part')).toBeInTheDocument()
-    const pending = await screen.findAllByText('PENDING')
-    expect(pending.length).toBeGreaterThan(0)
+    const received = await screen.findAllByText('RECEIVED')
+    expect(received.length).toBeGreaterThan(0)
   })
 
   it('shows Add Job button', () => {

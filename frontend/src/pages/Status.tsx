@@ -54,8 +54,8 @@ export default function Status() {
     const mapped = [
       ...(queueResult.data || []).filter((q: any) => !q.job_id).map((q: any) => ({
         ...q,
-        _status: 'PENDING',
-        _statusKey: 'PENDING',
+        _status: 'RECEIVED',
+        _statusKey: 'RECEIVED',
       })),
       ...(jobsResult.data || []).map((j: any) => ({
         ...j,

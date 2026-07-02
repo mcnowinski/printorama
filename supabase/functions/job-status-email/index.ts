@@ -46,18 +46,14 @@ serve(async (req) => {
     const prefix = settings?.email_subject_prefix || '[Fab-O-Rama]'
     const siteUrl = settings?.site_url || ''
 
-    const subject = `${prefix} ${job.title} — status changed to ${record.new_value}`
+    const subject = `${prefix} ${'"' + job.title + '"'} : ${record.new_value}`
     const statusLink = siteUrl ? `${siteUrl}/status/${record.job_id}?email=${encodeURIComponent(job.student_email)}` : ''
 
     const emailBody = [
-      `Hi ${job.student_name},`,
-      '',
-      `Your job "${job.title}" has been updated:`,
-      '',
-      `  ${record.old_value} → ${record.new_value}`,
-      '',
-      statusLink ? `View details: ${statusLink}` : '',
-      '',
+      `Hi ${job.student_name}!`,
+      ' ',
+      `The status of your job ${'("' + job.title + '")'} has been changed to ${record.new_value}.` + (statusLink ? `Additional details can be found at ${statusLink}.` : ''),
+      ' ',
       'Thanks,',
       prefix.replace(/[\[\]]/g, ''),
     ].filter(Boolean).join('\n')

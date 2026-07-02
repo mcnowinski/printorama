@@ -45,7 +45,7 @@ export default function StatusDetail() {
         } else {
           const { data: queueItems } = await supabase.rpc('get_my_queue_items', { p_email: email })
           const queued = (queueItems || []).find((q: any) => q.id === id)
-          if (queued) setJob({ ...queued, status: 'PENDING' })
+          if (queued) setJob({ ...queued, status: 'RECEIVED' })
         }
       } else {
         const { data } = await supabase.from('jobs').select('*, printers!left(name)').eq('id', id).single()
@@ -168,11 +168,11 @@ export default function StatusDetail() {
             </div>
           </CardContent>
         </Card>
-      ) : job.status === 'PENDING' ? (
+      ) : job.status === 'RECEIVED' ? (
         <Card>
           <CardHeader><CardTitle>History</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-sm text-neutral-500">Job is pending review.</p>
+            <p className="text-sm text-neutral-500">Job has been received and will be reviewed shortly.</p>
           </CardContent>
         </Card>
       ) : null}

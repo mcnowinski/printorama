@@ -144,7 +144,7 @@ export default function Request() {
         largest_dimension: form.largestDimension ? parseFloat(form.largestDimension) : null,
         dimension_unit: form.dimensionUnit,
         job_type: form.jobType || null,
-        status: 'PENDING',
+        status: 'RECEIVED',
       })
 
     if (error) {

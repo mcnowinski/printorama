@@ -32,24 +32,16 @@ serve(async (req) => {
     const siteUrl = settings?.site_url || ''
     const senderName = prefix.replace(/[\[\]]/g, '') 
 
-    const subject = `${prefix} ${record.title || 'Job Request'} was received!`
+    const subject = `${prefix} ${'"' + record.title + '"' || 'Job Request'} : RECEIVED`
     const statusLink = siteUrl ? `${siteUrl}/status` : ''
 
     const emailBody = [
       `Hi ${record.student_name}!`,
       ' ',
-      `Your job submission "${record.title || 'Untitled'}" has been received and will be reviewed shortly. You will receive email updates when the status changes` + (statusLink ? ` or you can check your job status directly at ${statusLink}.` : '.'),
+      `Your job ${record.title ? '("' + record.title + '")' : '"Job Request"'} has been RECEIVED and will be reviewed shortly. Job status changes will be automatically emailed to you` + (statusLink ? ` or can be checked directly at ${statusLink}.` : '.'),
       ' ',
       'Thanks,',
       senderName,
-    ].filter(Boolean).join('\n')
-
-    const emailHtml = [
-      `<p>Hi ${record.student_name},</p>`,
-      `<p>Your job request <strong>"${record.title || 'Untitled'}"</strong> has been received and is now in the review queue.</p>`,
-      '<p>A lab manager will review it shortly. You will receive an email when the status changes.</p>',
-      statusLink ? `<p><a href="${statusLink}">Check your status</a></p>` : '',
-      `<p>Thanks,<br/>${senderName}</p>`,
     ].filter(Boolean).join('\n')
 
     const resendKey = Deno.env.get('RESEND_API_KEY')
@@ -57,7 +49,7 @@ serve(async (req) => {
       console.log('[EMAIL MOCK] Queue confirmation:')
       console.log(`  To: ${record.student_email}`)
       console.log(`  Subject: ${subject}`)
-      console.log(`  Body:\n${emailText}`)
+      console.log(`  Body:\n${emailBody}`)
       return new Response(JSON.stringify({ sent: false, mock: true }), { status: 200, headers })
     }
 
@@ -68,8 +60,7 @@ serve(async (req) => {
         from: `${senderName} <onboarding@resend.dev>`,
         to: [record.student_email],
         subject,
-        text: emailText,
-        html: emailHtml,
+        text: emailBody
       }),
     })
 

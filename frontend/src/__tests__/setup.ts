@@ -107,6 +107,10 @@ const handlers = [
   http.delete(`${supabaseUrl}/rest/v1/users`, () =>
     HttpResponse.json(null, { status: 200 })
   ),
+
+  http.post(`${supabaseUrl}/rest/v1/job_history`, () =>
+    HttpResponse.json([{ id: 'hist-1' }], { status: 201 })
+  ),
 ]
 
 const server = setupServer(...handlers)

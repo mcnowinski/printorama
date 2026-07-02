@@ -67,7 +67,7 @@ export default function Dashboard() {
   }
 
   async function loadQueue() {
-    const { data } = await supabase.from('job_queue').select('*').eq('status', 'PENDING').order('created_at', { ascending: false })
+    const { data } = await supabase.from('job_queue').select('*').eq('status', 'RECEIVED').order('created_at', { ascending: false })
     setQueue(data || [])
   }
 
@@ -130,7 +130,7 @@ export default function Dashboard() {
   const filtered = allItems
     .filter((item) => {
       if (filter !== 'ALL') {
-        if (item._isQueue) return filter === 'PENDING'
+        if (item._isQueue) return filter === 'RECEIVED'
         if (item.status !== filter) return false
       }
       if (search && !(item.title || '').toLowerCase().includes(search.toLowerCase()) &&
@@ -142,8 +142,8 @@ export default function Dashboard() {
       let cmp = 0
       if (sortField === 'student_name') cmp = a.student_name.localeCompare(b.student_name)
       else if (sortField === 'status') {
-        const av = a._isQueue ? 'PENDING' : a.status
-        const bv = b._isQueue ? 'PENDING' : b.status
+        const av = a._isQueue ? 'RECEIVED' : a.status
+        const bv = b._isQueue ? 'RECEIVED' : b.status
         cmp = av.localeCompare(bv)
       } else if (sortField === 'printer') {
         cmp = (a.printers?.name || '').localeCompare(b.printers?.name || '')
@@ -158,7 +158,7 @@ export default function Dashboard() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages - 1)
   const paginatedItems = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
-  const statuses = [...new Set(['PENDING', ...jobs.map((j) => j.status)])]
+  const statuses = [...new Set(['PROCESSING', ...jobs.map((j) => j.status)])]
   const isAdmin = profile?.role === 'ADMINISTRATOR'
 
   return (
@@ -293,7 +293,7 @@ export default function Dashboard() {
                     <td className="px-4 py-3 text-sm text-neutral-500">{formatDate(item.submitted_at || item.created_at)}</td>
                     <td className="px-4 py-3">
                       {item._isQueue ? (
-                        <Badge variant="warning">PENDING</Badge>
+                        <Badge variant="warning">RECEIVED</Badge>
                       ) : (
                         <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
                       )}

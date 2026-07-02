@@ -6,7 +6,7 @@
 -- ============================================================
 INSERT INTO dropdown_options (category, label, sort_order) VALUES
   ('JOB_STATUS', 'RECEIVED', 1),
-  ('JOB_STATUS', 'PENDING', 2),
+  ('JOB_STATUS', 'PROCESSING', 2),
   ('JOB_STATUS', 'FABRICATING', 3),
   ('JOB_STATUS', 'COMPLETE', 4),
   ('JOB_STATUS', 'FAILED', 5),

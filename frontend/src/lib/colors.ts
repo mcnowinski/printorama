@@ -1,8 +1,8 @@
 type BadgeVariant = 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'
 
 export const statusColors: Record<string, BadgeVariant> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
+  RECEIVED: 'warning',
+  PROCESSING: 'secondary',
   FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',

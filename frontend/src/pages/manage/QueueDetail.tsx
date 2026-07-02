@@ -16,7 +16,7 @@ export default function QueueDetail() {
   const [statusOptions, setStatusOptions] = useState<{ label: string }[]>([])
   const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [printers, setPrinters] = useState<any[]>([])
-  const [approveStatus, setApproveStatus] = useState('RECEIVED')
+  const [approveStatus, setApproveStatus] = useState('PROCESSING')
   const [approveJobType, setApproveJobType] = useState('')
   const [approvePrinter, setApprovePrinter] = useState('')
   const [saving, setSaving] = useState(false)
@@ -64,7 +64,7 @@ export default function QueueDetail() {
     await supabase.from('job_history').insert({
       job_id: newJob.id,
       field: 'status',
-      old_value: 'PENDING',
+      old_value: 'RECEIVED',  // queue status before approve
       new_value: approveStatus,
     })
 
@@ -77,7 +77,7 @@ export default function QueueDetail() {
   if (loading) return <div className="py-24 text-center text-neutral-500">Loading...</div>
   if (!item) return <div className="py-24 text-center text-neutral-500">Submission not found.</div>
 
-  const isPending = item.status === 'PENDING'
+  const isQueueItem = item.status === 'RECEIVED'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -122,12 +122,12 @@ export default function QueueDetail() {
             </div>
           )}
 
-          {isPending && (
+          {isQueueItem && (
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs">Status</Label>
                 <Select value={approveStatus} onChange={(e) => setApproveStatus(e.target.value)} className="w-40">
-                  {statusOptions.filter((s) => s.label !== 'PENDING').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+                  {statusOptions.filter((s) => s.label !== 'PENDING' && s.label !== 'RECEIVED').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
                 </Select>
               </div>
               <div className="space-y-1">

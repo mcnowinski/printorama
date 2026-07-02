@@ -173,7 +173,7 @@ export default function ManageJobDetail() {
           <div className="space-y-2">
             <Label>Status</Label>
             <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-              {statuses.filter((s) => s.label !== 'PENDING').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
+              {statuses.filter((s) => s.label !== 'PENDING' && s.label !== 'RECEIVED').map((s) => <option key={s.label} value={s.label}>{s.label}</option>)}
             </Select>
           </div>
           <div className="space-y-2">

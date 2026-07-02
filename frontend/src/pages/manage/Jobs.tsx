@@ -9,8 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Search } from 'lucide-react'
 
 const statusColors: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
-  RECEIVED: 'secondary',
-  PENDING: 'warning',
+  RECEIVED: 'warning',
   FABRICATING: 'info',
   COMPLETE: 'success',
   FAILED: 'destructive',
