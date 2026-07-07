@@ -33,7 +33,7 @@ serve(async (req) => {
     const senderName = prefix.replace(/[\[\]]/g, '') 
 
     const subject = `${prefix} ${'"' + record.title + '"' || 'Job Request'} : RECEIVED`
-    const statusLink = siteUrl ? `${siteUrl}/status?email=` + record.student_email : ''
+    const statusLink = siteUrl ? `${siteUrl}/status` : ''
 
     const emailBody = [
       `Hi ${record.student_name}!`,
@@ -57,7 +57,7 @@ serve(async (req) => {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: `${senderName} <noreply@nowinski.com>`,
+        from: `${senderName} <onboarding@resend.dev>`,
         to: [record.student_email],
         subject,
         text: emailBody

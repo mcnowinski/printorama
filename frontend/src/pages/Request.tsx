@@ -177,9 +177,9 @@ export default function Request() {
       <Card className="mx-auto max-w-lg mt-12">
         <CardHeader>
           <CardTitle>Job Submitted!</CardTitle>
-          {/* <CardDescription>
-            Your job has been submitted.
-          </CardDescription> */}
+          <CardDescription>
+            Your print job request has been submitted.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-neutral-600">
