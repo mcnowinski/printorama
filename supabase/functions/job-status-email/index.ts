@@ -52,7 +52,7 @@ serve(async (req) => {
     const emailBody = [
       `Hi ${job.student_name}!`,
       ' ',
-      `The status of your job ${'("' + job.title + '")'} has been changed to ${record.new_value}.` + (statusLink ? `Additional details can be found at ${statusLink}.` : ''),
+      `The status of your job ${'("' + job.title + '")'} has been changed to ${record.new_value}.` + (statusLink ? ` Additional details can be found at ${statusLink}.` : ''),
       ' ',
       'Thanks,',
       prefix.replace(/[\[\]]/g, ''),
@@ -74,7 +74,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `${prefix.replace(/[\[\]]/g, '')} <onboarding@resend.dev>`,
+        from: `${prefix.replace(/[\[\]]/g, '')} <noreply@nowinski.com>`,
         to: [job.student_email],
         subject,
         text: emailBody,
