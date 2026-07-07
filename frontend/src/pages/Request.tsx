@@ -17,7 +17,7 @@ export default function Request() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [requestsOpen, setRequestsOpen] = useState(true)
+  const [requestsOpen, setRequestsOpen] = useState<boolean | null>(null)
   const [acceptedExtensions, setAcceptedExtensions] = useState<string[]>([])
   const [jobTypes, setJobTypes] = useState<{ label: string }[]>([])
   const [file, setFile] = useState<File | null>(null)
@@ -158,6 +158,19 @@ export default function Request() {
   }
 
   const acceptString = acceptedExtensions.map(e => `.${e}`).join(',')
+
+  if (requestsOpen === null) {
+    return (
+      <Card className="mx-auto max-w-lg mt-12">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading...
+          </CardTitle>
+        </CardHeader>
+      </Card>
+    )
+  }
 
   if (!requestsOpen) {
     return (
