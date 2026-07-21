@@ -132,37 +132,39 @@ export default function Status() {
           <h2 className="text-lg font-semibold">Your Jobs ({sorted.length})</h2>
 
           <Card>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b dark:border-neutral-800 text-left">
-                {['title', 'created_at', 'modified', 'status', 'job_type'].map((field) => (
-                  <th key={field} className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort(field)}>
-                    {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : field === 'status' ? 'Status' : 'Type'}
-                    {sortField === field && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                  </th>
-                ))}
-                <th className="h-12 px-4 font-medium text-neutral-500"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedItems.map((item) => (
-                  <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
-                    <td className="px-4 py-3 font-medium">{item.title || item.student_name}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.submitted_at || item.created_at)}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{fmt(item.updated_at || item.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
-                    </td>
-                    <td className="px-4 py-3">{item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : <span className="text-sm text-neutral-500">—</span>}</td>
-                    <td className="px-4 py-3">
-                      <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/status/${item.id}?email=${encodeURIComponent(email)}`)}>
-                        <Clock className="h-4 w-4" />
-                      </Button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b dark:border-neutral-800 text-left">
+                  {['title', 'created_at', 'modified', 'status', 'job_type'].map((field) => (
+                    <th key={field} className={'h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap' + (field === 'created_at' || field === 'modified' ? ' hidden sm:table-cell' : '') + (field === 'job_type' ? ' hidden md:table-cell' : '')} onClick={() => handleSort(field)}>
+                      {field === 'title' ? 'Job' : field === 'created_at' ? 'Submitted' : field === 'modified' ? 'Last Modified' : field === 'status' ? 'Status' : 'Type'}
+                      {sortField === field && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                    </th>
+                  ))}
+                  <th className="h-12 px-4 font-medium text-neutral-500 whitespace-nowrap"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((item) => (
+                    <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
+                      <td className="px-4 py-3 font-medium max-w-[160px] truncate">{item.title || item.student_name}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap hidden sm:table-cell">{fmt(item.submitted_at || item.created_at)}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap hidden sm:table-cell">{fmt(item.updated_at || item.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Badge variant={statusColors[item._statusKey] || 'default'}>{item._status}</Badge>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">{item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : <span className="text-sm text-neutral-500">—</span>}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/status/${item.id}?email=${encodeURIComponent(email)}`)}>
+                          <Clock className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
 
           {sorted.length > pageSize && (

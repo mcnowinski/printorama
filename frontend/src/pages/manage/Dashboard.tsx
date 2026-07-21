@@ -262,65 +262,67 @@ export default function Dashboard() {
         </div>
 
         <Card>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b dark:border-neutral-800 text-left">
-                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('student_name')}>
-                  Name{sortField === 'student_name' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                </th>
-                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('created_at')}>
-                  Submitted{sortField === 'created_at' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                </th>
-                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('status')}>
-                  Status{sortField === 'status' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                </th>
-                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('job_type')}>
-                  Type{sortField === 'job_type' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                </th>
-                <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none" onClick={() => handleSort('printer')}>
-                  Tool{sortField === 'printer' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
-                </th>
-                <th className="h-12 px-4 font-medium text-neutral-500"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedItems.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
-              ) : (
-                paginatedItems.map((item) => (
-                  <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
-                    <td className="px-4 py-3 font-medium">{item.title || item.student_name}</td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">{formatDate(item.submitted_at || item.created_at)}</td>
-                    <td className="px-4 py-3">
-                      {item._isQueue ? (
-                        <Badge variant="warning">RECEIVED</Badge>
-                      ) : (
-                        <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">
-                      {item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-neutral-500">
-                      {item.printers?.name || '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" title="Edit job" onClick={() => navigate(item._isQueue ? `/manage/queue/${item.id}` : `/manage/jobs/${item.id}`)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {!item._isQueue && (
-                          <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/manage/jobs/${item.id}/history`)}>
-                            <Clock className="h-4 w-4" />
-                          </Button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b dark:border-neutral-800 text-left">
+                  <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap" onClick={() => handleSort('student_name')}>
+                    Name{sortField === 'student_name' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                  <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap hidden sm:table-cell" onClick={() => handleSort('created_at')}>
+                    Submitted{sortField === 'created_at' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                  <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap" onClick={() => handleSort('status')}>
+                    Status{sortField === 'status' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                  <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('job_type')}>
+                    Type{sortField === 'job_type' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                  <th className="h-12 px-4 font-medium text-neutral-500 cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 select-none whitespace-nowrap hidden md:table-cell" onClick={() => handleSort('printer')}>
+                    Tool{sortField === 'printer' && <span className="ml-1 text-xs">{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>}
+                  </th>
+                  <th className="h-12 px-4 font-medium text-neutral-500 whitespace-nowrap"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedItems.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">No submissions found.</td></tr>
+                ) : (
+                  paginatedItems.map((item) => (
+                    <tr key={item.id} className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
+                      <td className="px-4 py-3 font-medium max-w-[160px] truncate">{item.title || item.student_name}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap hidden sm:table-cell">{formatDate(item.submitted_at || item.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {item._isQueue ? (
+                          <Badge variant="warning">RECEIVED</Badge>
+                        ) : (
+                          <Badge variant={statusColors[item.status] || 'default'}>{item.status}</Badge>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap hidden md:table-cell">
+                        {item.job_type ? <Badge variant={jobTypeColors[item.job_type] || 'secondary'}>{item.job_type}</Badge> : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-500 whitespace-nowrap hidden md:table-cell">
+                        {item.printers?.name || '—'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" title="Edit job" onClick={() => navigate(item._isQueue ? `/manage/queue/${item.id}` : `/manage/jobs/${item.id}`)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {!item._isQueue && (
+                            <Button variant="ghost" size="sm" title="View history" onClick={() => navigate(`/manage/jobs/${item.id}/history`)}>
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
 
         {filtered.length > pageSize && (
